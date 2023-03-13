@@ -48,23 +48,26 @@ int main(void) {
 	
 		if (strcmp(dirbuf->d_name, ".") == 0) {
 			continue;
-		} else if (strcmp(dirbuf->d_name, "..") == 0) {
+		} 
+
+		if (strcmp(dirbuf->d_name, "..") == 0) {
 			continue;
-		} else if (dirbuf->d_name[0] == '.') {
+		} 
+
+		if (dirbuf->d_name[0] == '.') {
 			continue;
-		} else {
-			// получаю указатель, чтобы по нему записать имя в буфер имен
-			if (n >= MAX || (p = alloc(strlen(dirbuf->d_name) + 1)) == NULL) {
-				fprintf(stderr, "too much files\n");
-				return -1;
-			}
-			
-			// записываю имя файла в буфер имен
-			strcpy(p, dirbuf->d_name);
-			// записываю указатель на имя файла в буфер указателей на имена
-			s[n++] = p;
 		}
 		
+		// получаю указатель, чтобы по нему записать имя в буфер имен
+		if (n >= MAX || (p = alloc(strlen(dirbuf->d_name) + 1)) == NULL) {
+			fprintf(stderr, "too much files\n");
+			return -1;
+		}
+		
+		// записываю имя файла в буфер имен
+		strcpy(p, dirbuf->d_name);
+		// записываю указатель на имя файла в буфер указателей на имена
+		s[n++] = p;
 	}
 
 	// закрываю структуру каталога

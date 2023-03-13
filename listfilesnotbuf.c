@@ -28,6 +28,7 @@ char *s[MAX];
 
 int main(void) {
 
+	extern int errno;
 	struct dirent *dirbuf;
 	DIR *fd;
 	int n = 0;
@@ -44,23 +45,24 @@ int main(void) {
 	
 		if (strcmp(dirbuf->d_name, ".") == 0) {
 			continue;
-		} else if (strcmp(dirbuf->d_name, "..") == 0) {
+		} 
+		if (strcmp(dirbuf->d_name, "..") == 0) {
 			continue;
-		} else if (dirbuf->d_name[0] == '.') {
+		} 
+		if (dirbuf->d_name[0] == '.') {
 			continue;
-		} else {
-			// выделяю память динамически для каждого имени файла
-			if ((p = (char *) malloc(strlen(dirbuf->d_name) + 1)) == NULL) {
-				fprintf(stderr, "too much files\n");
-				return -1;
-			}
-			
-			// записываю имя файла в буфер имен
-			strcpy(p, dirbuf->d_name);
-			// записываю указатель на имя файла в буфер указателей на имена
-			s[n++] = p;
 		}
 		
+		// выделяю память динамически для каждого имени файла
+		if ((p = (char *) malloc(strlen(dirbuf->d_name) + 1)) == NULL) {
+			fprintf(stderr, "%s\n", strerror(errno));
+			return -1;
+		}
+		
+		// записываю имя файла в буфер имен
+		strcpy(p, dirbuf->d_name);
+		// записываю указатель на имя файла в буфер указателей на имена
+		s[n++] = p;		
 	}
 
 	// закрываю структуру каталога
