@@ -3,7 +3,6 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <stdlib.h>
-#define MAX 100
 
 
 // Программа выводит отсортированный в алфавитном порядке список файлов в текущем каталоге
@@ -23,10 +22,10 @@ int mystrcmp(char *s, char *t);
 void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
 
-// буфер с указателями на имена файлов
-char *s[MAX];
-
 int main(void) {
+
+	// динамически выделяю память для 5 указателей на имена
+	char **names = (char **) calloc(5, sizeof(char *));
 
 	extern int errno;
 	struct dirent *dirbuf;
@@ -61,22 +60,28 @@ int main(void) {
 		
 		// записываю имя файла в буфер имен
 		strcpy(p, dirbuf->d_name);
-		// записываю указатель на имя файла в буфер указателей на имена
-		s[n++] = p;		
+		
+		// записываю указатель на имя файла в выделенную динамически память на указатели
+		if (!(names[n++] = p)) {
+			names = (char **) realloc(names, 5 * sizeof(char *));
+			names[n - 1] = p;
+		}
 	}
 
 	// закрываю структуру каталога
 	closedir(fd);
 
 	// сортирую буфер с указателями на имена в алфавитном порядке
-	myqsort(s, 0, n - 1);
+	myqsort(names, 0, n - 1);
 
 	// вывожу каждое имя из буфера с указателями на имена
 	for (int i = 0; i < n; i++) {
-		printf("%s  ", s[i]);
+		printf("%s  ", names[i]);
 		// очищаю память, выделенную под имена
-		free(s[i]);
+		free(names[i]);
 	}
+	free(names);
+	
 	putchar('\n');
 	
 	return 0;
