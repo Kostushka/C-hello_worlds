@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <errno.h>
 
 
 // Программа выводит отсортированный в алфавитном порядке список файлов в текущем каталоге
@@ -24,14 +25,21 @@ void swap(char *s[], int i, int j);
 
 int main(void) {
 
-	// динамически выделяю память для 5 указателей на имена
-	char **names = (char **) calloc(5, sizeof(char *));
-
 	extern int errno;
 	struct dirent *dirbuf;
 	DIR *fd;
+	
+	int size_names = 5;
 	int n = 0;
 	char *p;
+
+	// массив указателей
+	char **names;
+	
+	// динамически выделяю память для 5 указателей на имена
+	if ((names = (char **) calloc(size_names, sizeof(char *))) == NULL) {
+		fprintf(stderr, "%s\n", strerror(errno));
+	}
 
 	// получаю структуру с файловым дескриптором и структурой первого файла: имя - номер индекса
 	if ((fd = opendir(".")) == NULL) { 
@@ -60,11 +68,18 @@ int main(void) {
 		
 		// записываю имя файла в буфер имен
 		strcpy(p, dirbuf->d_name);
-		
-		// записываю указатель на имя файла в выделенную динамически память на указатели
-		if (!(names[n++] = p)) {
-			names = (char **) realloc(names, 5 * sizeof(char *));
-			names[n - 1] = p;
+
+		// проверяю есть ли место в массиве указателей для следующего указателя
+		if (n != size_names - 1) {
+			names[n++] = p;
+		} else {
+			// записываю указатель на имя файла в выделенную динамически память на указатели
+			size_names *= 2;
+			if ((names = (char **) realloc(names, size_names * sizeof(char *))) == NULL) {
+				fprintf(stderr, "%s\n", strerror(errno));
+			} else {
+				names[n++] = p;
+			}
 		}
 	}
 
