@@ -38,7 +38,9 @@ int main(void) {
 	
 	// динамически выделяю память для 5 указателей на имена
 	if ((names = (char **) calloc(size_names, sizeof(char *))) == NULL) {
-		fprintf(stderr, "%s\n", strerror(errno));
+		// fprintf(stderr, "%s\n", strerror(errno));
+		perror("calloc");
+		return -1;
 	}
 
 	// получаю структуру с файловым дескриптором и структурой первого файла: имя - номер индекса
@@ -62,7 +64,8 @@ int main(void) {
 		
 		// выделяю память динамически для каждого имени файла
 		if ((p = (char *) malloc(strlen(dirbuf->d_name) + 1)) == NULL) {
-			fprintf(stderr, "%s\n", strerror(errno));
+			// fprintf(stderr, "%s\n", strerror(errno));
+			perror("malloc");
 			return -1;
 		}
 		
@@ -71,12 +74,16 @@ int main(void) {
 
 		// проверяю есть ли место в массиве указателей для следующего указателя
 		if (n != size_names - 1) {
+			// записываю указатель на имя файла в выделенную динамически память на указатели
 			names[n++] = p;
 		} else {
+			// выделяю дополнительный блок памяти большего размера с сохранением в него текущего массива указателей
 			// записываю указатель на имя файла в выделенную динамически память на указатели
 			size_names *= 2;
 			if ((names = (char **) realloc(names, size_names * sizeof(char *))) == NULL) {
-				fprintf(stderr, "%s\n", strerror(errno));
+				// fprintf(stderr, "%s\n", strerror(errno));
+				perror("realloc");
+				return -1;
 			} else {
 				names[n++] = p;
 			}
