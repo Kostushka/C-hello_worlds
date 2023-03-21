@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <errno.h>
-#define MAX 100
 
 
 // Программа выводит отсортированный в алфавитном порядке список файлов в текущем каталоге
@@ -26,9 +25,6 @@ void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
 void listfiles(char *filename);
 
-// буфер с указателями на имена файлов
-char *s[MAX];
-
 int main(void) {
 
 	listfiles(".");
@@ -42,8 +38,17 @@ void listfiles(char *filename) {
 	struct dirent *dirbuf;
 	DIR *fd;
 	struct stat stbuf;
+	int size_names = 5;
 	int n = 0;
 	char *p;
+
+	// массив указателей на имена
+	char **names;
+
+	if ((names = (char **) malloc(size_names * sizeof(char *))) == NULL) {
+		perror("malloc");
+		return;
+	}
 
 	// получаю структуру с файловым дескриптором и структурой первого файла: имя - номер индекса
 	if ((fd = opendir(filename)) == NULL) { 
@@ -66,8 +71,8 @@ void listfiles(char *filename) {
 		
 		// получаем информацию из inode по имени файла и записываем в буфер
 		if (stat(dirbuf->d_name, &stbuf) == -1) {
-			// perror("stat");
-			fprintf(stderr, "%s\n", strerror(errno));
+			fprintf(stderr, "%s: %s\n", dirbuf->d_name, strerror(errno));
+			return;
 		} else {
 			// проверяем по данным из inode, что файл - каталог
 			if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
@@ -77,28 +82,40 @@ void listfiles(char *filename) {
 	
 		// выделяю память динамически для каждого имени файла
 		if ((p = (char *) malloc(strlen(dirbuf->d_name) + 1)) == NULL) {
-			fprintf(stderr, "%s\n", strerror(errno));
+			perror("malloc");
 			return;
 		}
 		
 		// записываю имя файла в буфер имен
 		strcpy(p, dirbuf->d_name);
+		
 		// записываю указатель на имя файла в буфер указателей на имена
-		s[n++] = p;	
+		if (n != size_names - 1) {
+			names[n++] = p;
+		} else {
+			size_names *= 2;
+			if ((names = (char **) realloc(names, size_names * sizeof(char *))) == NULL) {
+				perror("realloc");
+				return;
+			} else {
+				names[n++] = p;
+			}
+		}
 	}
 
 	// закрываю структуру каталога
 	closedir(fd);
 
 	// сортирую буфер с указателями на имена в алфавитном порядке
-	myqsort(s, 0, n - 1);
+	myqsort(names, 0, n - 1);
 
 	// вывожу каждое имя из буфера с указателями на имена
 	for (int i = 0; i < n; i++) {
-		printf("%s  ", s[i]);
+		printf("%s  ", names[i]);
 		// очищаю память, выделенную под имена
-		free(s[i]);
+		free(names[i]);
 	}
+	free(names);
 	putchar('\n');
 }
 
