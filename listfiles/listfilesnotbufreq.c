@@ -33,7 +33,8 @@ int main(void) {
 }
 
 void listfiles(char *filename) {
-
+	printf("%s\n", filename);
+	
 	extern int errno;
 	struct dirent *dirbuf;
 	DIR *fd;
@@ -52,8 +53,8 @@ void listfiles(char *filename) {
 
 	// получаю структуру с файловым дескриптором и структурой первого файла: имя - номер индекса
 	if ((fd = opendir(filename)) == NULL) { 
-		fprintf(stderr, "can't open directory\n");
-		return;
+		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
+		exit(1);
 	}
 
 	// пока есть пункты списка, работаю с каждым из них
@@ -68,17 +69,40 @@ void listfiles(char *filename) {
 		if (dirbuf->d_name[0] == '.') {
 			continue;
 		}
-		
-		// получаем информацию из inode по имени файла и записываем в буфер
-		if (stat(dirbuf->d_name, &stbuf) == -1) {
-			fprintf(stderr, "%s: %s\n", dirbuf->d_name, strerror(errno));
+
+		// выделяем буфер под имя каталога, чтобы его менять (т.к. строка по указателю доступна только для чтения)
+		char *filenamep;
+		if ((filenamep = (char *) malloc(strlen(filename) + strlen("/") + 1 + strlen(dirbuf->d_name) + 1 + strlen("/") + 1)) == NULL) {
+			perror("malloc");
 			return;
-		} else {
-			// проверяем по данным из inode, что файл - каталог
-			if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
-				listfiles(dirbuf->d_name);
-			}
 		}
+		
+		// записываем имя в выделенный буфер
+		strcpy(filenamep, filename);
+		
+		// если имя . добавляем / для формирования корректного относительного пути 
+		if (strcmp(filenamep, ".") == 0) {
+			strcat(filenamep, "/");
+		}
+
+		// добавляем к имени каталога имя содержащегося в нем файла: например, ./d1
+		strcat(filenamep, dirbuf->d_name);
+		
+		printf("%s\n", filenamep);
+
+		// получаем информацию из inode по имени файла и записываем в буфер
+		if (stat(filenamep, &stbuf) == -1) {
+			fprintf(stderr, "%s: %s\n", dirbuf->d_name, strerror(errno));
+		}
+		
+		// проверяем по данным из inode, что файл - каталог
+		if (S_ISDIR(stbuf.st_mode)) {
+			// рекурсивно вызываем функцию, передаем относительный путь + /: например, ./d1/
+			listfiles(strcat(filenamep, "/"));
+		}
+
+		// очищаем память, выделенную под имя для формирования относительного пути
+		free(filenamep);
 	
 		// выделяю память динамически для каждого имени файла
 		if ((p = (char *) malloc(strlen(dirbuf->d_name) + 1)) == NULL) {
@@ -89,18 +113,17 @@ void listfiles(char *filename) {
 		// записываю имя файла в буфер имен
 		strcpy(p, dirbuf->d_name);
 		
-		// записываю указатель на имя файла в буфер указателей на имена
-		if (n != size_names - 1) {
-			names[n++] = p;
-		} else {
+		if (n == size_names - 1) {
 			size_names *= 2;
 			if ((names = (char **) realloc(names, size_names * sizeof(char *))) == NULL) {
 				perror("realloc");
 				return;
-			} else {
-				names[n++] = p;
 			}
 		}
+
+		// записываю указатель на имя файла в буфер указателей на имена
+		names[n++] = p;
+
 	}
 
 	// закрываю структуру каталога
