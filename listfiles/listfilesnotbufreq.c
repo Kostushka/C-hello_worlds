@@ -20,37 +20,50 @@
 	// struct DIRENT d; // пункт списка файлов
 // };
 
+struct Names {
+	char **names;
+	int size_names;
+	int num_names;
+};
+
 int mystrcmp(char *s, char *t);
 void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
-int listfiles(char *dirname, char ***names, int *SIZE_NAMES, int *NUM_NAMES);
+int listfiles(char *dirname, struct Names *pp);
 
 int main(void) {
 
-	int SIZE_NAMES = 5;
-	int NUM_NAMES = 0;
-
+	// указатель на структуру
+	struct Names *pp;
+	if ((pp = (struct Names *) malloc(sizeof(struct Names))) == NULL) {
+		perror("malloc");
+		return 1;
+	}
+	
 	// массив указателей на имена
-	char **names;
+	char **names = NULL;
 
-	if ((names = (char **) malloc(SIZE_NAMES * sizeof(char *))) == NULL) {
+	pp->names = names;
+	pp->size_names = 5;
+	pp->num_names = 0;
+
+	if ((names = (char **) malloc(pp->size_names * sizeof(char *))) == NULL) {
 		perror("malloc");
 		return 1;
 	}
 
 	// передаю указатель на переменную, которая хранит указатель на блок памяти
 	// &names - адрес переменной, не блока памяти!!!
-	// &SIZE_NAMES, &NUM_NAMES - передаю адреса переменных, чтобы получать измененные значения
-	if (listfiles(".", &names, &SIZE_NAMES, &NUM_NAMES) == -1) {
+	// &size_names, &num_names - передаю адреса переменных, чтобы получать измененные значения
+	if (listfiles(".", pp) == -1) {
 		return 1;
 	}
 
 	// сортирую буфер с указателями на имена в алфавитном порядке
-	myqsort(names, 0, NUM_NAMES - 1);
+	myqsort(names, 0, pp->num_names - 1);
 
 	// вывожу каждое имя из буфера с указателями на имена
-	printf("File names: \n");
-	for (int i = 0; i < NUM_NAMES; i++) {
+	for (int i = 0; i < pp->num_names; i++) {
 		printf("%s\n", names[i]);
 		// очищаю память, выделенную под имена
 		free(names[i]);
@@ -60,7 +73,7 @@ int main(void) {
 	return 0;
 }
 
-int listfiles(char *dirname, char ***names, int *SIZE_NAMES, int *NUM_NAMES) {
+int listfiles(char *dirname, struct Names *pp) {
 
 	extern int errno;
 	struct dirent *dirbuf;
@@ -94,16 +107,18 @@ int listfiles(char *dirname, char ***names, int *SIZE_NAMES, int *NUM_NAMES) {
 		// добавляем к имени каталога имя содержащегося в нем файла: например, ./d1
 		strcat(path, dirbuf->d_name);
 		
-		if (*NUM_NAMES == *SIZE_NAMES - 1) {
-			*SIZE_NAMES *= 2;
-			if ((*names = (char **) realloc(*names, *SIZE_NAMES * sizeof(char *))) == NULL) {
+		if (pp->num_names == pp->size_names - 1) {
+			pp->size_names *= 2;
+			if ((pp->names = (char **) realloc(pp->names, pp->size_names * sizeof(char *))) == NULL) {
 				perror("realloc");
 				return -1;
 			}
 		}
-		
+		fprintf(stderr, "%lu %d %d\n", sizeof(pp->names[0]), pp->size_names, pp->num_names);
 		// записываю указатель на имя файла в буфер указателей на имена
-		(*names)[(*NUM_NAMES)++] = path;
+		pp->names[pp->num_names++] = path;
+		fprintf(stderr, "%p %d %d\n", pp->names[0], pp->size_names, pp->num_names);
+
 
 		// получаем информацию из inode по имени файла и записываем в буфер
 		if (stat(path, &stbuf) == -1) {
@@ -112,9 +127,8 @@ int listfiles(char *dirname, char ***names, int *SIZE_NAMES, int *NUM_NAMES) {
 
 		// проверяем по данным из inode, что файл - каталог
 		if (S_ISDIR(stbuf.st_mode)) {
-			printf("%s - каталог\n", path);
 			// рекурсивно вызываем функцию, передаем относительный путь: например, ./d1/
-			listfiles(path, names, SIZE_NAMES, NUM_NAMES);	
+			listfiles(path, pp);	
 		}	
 	}
 
