@@ -23,37 +23,47 @@
 int mystrcmp(char *s, char *t);
 void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
-void listfiles(char *filename);
+void listfiles(char *dirname, char **names);
+
+int size_names = 5;
+int n = 0;
 
 int main(void) {
-
-	listfiles(".");
-	
-	return 0;
-}
-
-void listfiles(char *filename) {
-	printf("%s\n", filename);
-	
-	extern int errno;
-	struct dirent *dirbuf;
-	DIR *fd;
-	struct stat stbuf;
-	int size_names = 5;
-	int n = 0;
-	char *p;
 
 	// массив указателей на имена
 	char **names;
 
 	if ((names = (char **) malloc(size_names * sizeof(char *))) == NULL) {
 		perror("malloc");
-		return;
+		return 1;
 	}
+	
+	listfiles(".", names);
+
+	// сортирую буфер с указателями на имена в алфавитном порядке
+	myqsort(names, 0, n - 1);
+
+	// вывожу каждое имя из буфера с указателями на имена
+	for (int i = 0; i < n; i++) {
+		printf("%s\n", names[i]);
+		// очищаю память, выделенную под имена
+		free(names[i]);
+	}
+	free(names);
+	
+	return 0;
+}
+
+void listfiles(char *dirname, char **names) {
+	
+	extern int errno;
+	struct dirent *dirbuf;
+	DIR *fd;
+	struct stat stbuf;	
 
 	// получаю структуру с файловым дескриптором и структурой первого файла: имя - номер индекса
-	if ((fd = opendir(filename)) == NULL) { 
-		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
+	if ((fd = opendir(dirname)) == NULL) { 
+		fprintf(stderr, "%s: %s\n", dirname, strerror(errno));
 		exit(1);
 	}
 
@@ -70,48 +80,19 @@ void listfiles(char *filename) {
 			continue;
 		}
 
-		// выделяем буфер под имя каталога, чтобы его менять (т.к. строка по указателю доступна только для чтения)
-		char *filenamep;
-		if ((filenamep = (char *) malloc(strlen(filename) + strlen("/") + 1 + strlen(dirbuf->d_name) + 1 + strlen("/") + 1)) == NULL) {
+		// выделяем буфер под путь, чтобы его менять (т.к. строка по указателю доступна только для чтения)
+		char *path;
+		if ((path = (char *) malloc(strlen(dirname) + strlen("/") + 1 + strlen(dirbuf->d_name) + 1 + strlen("/") + 1)) == NULL) {
 			perror("malloc");
 			return;
 		}
 		
-		// записываем имя в выделенный буфер
-		strcpy(filenamep, filename);
-		
-		// если имя . добавляем / для формирования корректного относительного пути 
-		if (strcmp(filenamep, ".") == 0) {
-			strcat(filenamep, "/");
-		}
+		// записываем имя в выделенный буфер + /: например ./
+		strcpy(path, dirname);
+		strcat(path, "/");
 
 		// добавляем к имени каталога имя содержащегося в нем файла: например, ./d1
-		strcat(filenamep, dirbuf->d_name);
-		
-		printf("%s\n", filenamep);
-
-		// получаем информацию из inode по имени файла и записываем в буфер
-		if (stat(filenamep, &stbuf) == -1) {
-			fprintf(stderr, "%s: %s\n", dirbuf->d_name, strerror(errno));
-		}
-		
-		// проверяем по данным из inode, что файл - каталог
-		if (S_ISDIR(stbuf.st_mode)) {
-			// рекурсивно вызываем функцию, передаем относительный путь + /: например, ./d1/
-			listfiles(strcat(filenamep, "/"));
-		}
-
-		// очищаем память, выделенную под имя для формирования относительного пути
-		free(filenamep);
-	
-		// выделяю память динамически для каждого имени файла
-		if ((p = (char *) malloc(strlen(dirbuf->d_name) + 1)) == NULL) {
-			perror("malloc");
-			return;
-		}
-		
-		// записываю имя файла в буфер имен
-		strcpy(p, dirbuf->d_name);
+		strcat(path, dirbuf->d_name);
 		
 		if (n == size_names - 1) {
 			size_names *= 2;
@@ -122,24 +103,26 @@ void listfiles(char *filename) {
 		}
 
 		// записываю указатель на имя файла в буфер указателей на имена
-		names[n++] = p;
+		names[n++] = path;
 
+		// получаем информацию из inode по имени файла и записываем в буфер
+		if (stat(path, &stbuf) == -1) {
+			fprintf(stderr, "%s: %s\n", path, strerror(errno));
+		}
+		
+		// проверяем по данным из inode, что файл - каталог
+		if (S_ISDIR(stbuf.st_mode)) {
+			printf("%s - каталог\n", path);
+			// рекурсивно вызываем функцию, передаем относительный путь: например, ./d1/
+			listfiles(path, names);	
+		}	
+		
+		// очищаем память, выделенную под имя для формирования относительного пути
+		free(path);
 	}
 
 	// закрываю структуру каталога
 	closedir(fd);
-
-	// сортирую буфер с указателями на имена в алфавитном порядке
-	myqsort(names, 0, n - 1);
-
-	// вывожу каждое имя из буфера с указателями на имена
-	for (int i = 0; i < n; i++) {
-		printf("%s  ", names[i]);
-		// очищаю память, выделенную под имена
-		free(names[i]);
-	}
-	free(names);
-	putchar('\n');
 }
 
 
