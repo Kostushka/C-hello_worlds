@@ -23,7 +23,7 @@
 int mystrcmp(char *s, char *t);
 void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
-void listfiles(char *dirname, char **names);
+int listfiles(char *dirname, char **names);
 
 int size_names = 5;
 int n = 0;
@@ -38,7 +38,9 @@ int main(void) {
 		return 1;
 	}
 	
-	listfiles(".", names);
+	if (listfiles(".", names) == -1) {
+		return 1;
+	}
 
 	// сортирую буфер с указателями на имена в алфавитном порядке
 	myqsort(names, 0, n - 1);
@@ -54,7 +56,7 @@ int main(void) {
 	return 0;
 }
 
-void listfiles(char *dirname, char **names) {
+int listfiles(char *dirname, char **names) {
 	
 	extern int errno;
 	struct dirent *dirbuf;
@@ -65,27 +67,21 @@ void listfiles(char *dirname, char **names) {
 	// получаю структуру с файловым дескриптором и структурой первого файла: имя - номер индекса
 	if ((fd = opendir(dirname)) == NULL) { 
 		fprintf(stderr, "%s: %s\n", dirname, strerror(errno));
-		exit(1);
+		return -1;
 	}
 
 	// пока есть пункты списка, работаю с каждым из них
 	while ((dirbuf = readdir(fd)) != NULL) {
 	
-		if (strcmp(dirbuf->d_name, ".") == 0) {
-			continue;
-		} 
-		if (strcmp(dirbuf->d_name, "..") == 0) {
-			continue;
-		} 
 		if (dirbuf->d_name[0] == '.') {
 			continue;
 		}
 
 		// выделяем буфер под путь, чтобы его менять (т.к. строка по указателю доступна только для чтения)
 		char *path;
-		if ((path = (char *) malloc(strlen(dirname) + strlen("/") + 1 + strlen(dirbuf->d_name) + 1 + strlen("/") + 1)) == NULL) {
+		if ((path = (char *) malloc(strlen(dirname) + strlen("/") + strlen(dirbuf->d_name) + strlen("/") + 1)) == NULL) {
 			perror("malloc");
-			return;
+			return -1;
 		}
 		
 		// записываем имя в выделенный буфер + /: например ./
@@ -98,7 +94,7 @@ void listfiles(char *dirname, char **names) {
 		// выделяю память динамически для имени каждого файла
 		if ((p = (char *) malloc(strlen(path) + 1)) == NULL) {
 			perror("malloc");
-			return;
+			return -1;
 		}
 		strcpy(p, path);
 		
@@ -106,7 +102,7 @@ void listfiles(char *dirname, char **names) {
 			size_names *= 2;
 			if ((names = (char **) realloc(names, size_names * sizeof(char *))) == NULL) {
 				perror("realloc");
-				return;
+				return -1;
 			}
 		}
 
