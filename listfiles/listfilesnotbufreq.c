@@ -30,8 +30,19 @@ int mystrcmp(char *s, char *t);
 void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
 int listfiles(char *dirname, struct Names *names);
+char *getCorrectPath(char *s);
 
-int main(void) {
+int main(int argc, char **argv) {
+
+	char *pathname;
+
+	// работаем с каталогом из командной строки или с текущим
+	if (argc == 2) {
+		char *correctpath = getCorrectPath(argv[1]);
+		pathname = correctpath;
+	} else {
+		pathname = ".";
+	}
 
 	// структура
 	struct Names names;
@@ -45,7 +56,7 @@ int main(void) {
 	}
 
 	// &names - адрес структуры
-	if (listfiles(".", &names) == -1) {
+	if (listfiles(pathname, &names) == -1) {
 		return 1;
 	}
 
@@ -61,6 +72,20 @@ int main(void) {
 	free(names.items);
 	
 	return 0;
+}
+
+char *getCorrectPath(char *s) {
+
+	char *t = s;
+	
+	// *s - указывает на последний символ
+	s += strlen(s) - 1;
+	
+	if (*s == '/') {
+		*s = '\0';
+	}
+	
+	return t;
 }
 
 int listfiles(char *dirname, struct Names *names) {
