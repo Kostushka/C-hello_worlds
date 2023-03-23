@@ -60,6 +60,7 @@ void listfiles(char *dirname, char **names) {
 	struct dirent *dirbuf;
 	DIR *fd;
 	struct stat stbuf;	
+	char *p;
 
 	// получаю структуру с файловым дескриптором и структурой первого файла: имя - номер индекса
 	if ((fd = opendir(dirname)) == NULL) { 
@@ -93,6 +94,13 @@ void listfiles(char *dirname, char **names) {
 
 		// добавляем к имени каталога имя содержащегося в нем файла: например, ./d1
 		strcat(path, dirbuf->d_name);
+
+		// выделяю память динамически для имени каждого файла
+		if ((p = (char *) malloc(strlen(path) + 1)) == NULL) {
+			perror("malloc");
+			return;
+		}
+		strcpy(p, path);
 		
 		if (n == size_names - 1) {
 			size_names *= 2;
@@ -103,7 +111,7 @@ void listfiles(char *dirname, char **names) {
 		}
 
 		// записываю указатель на имя файла в буфер указателей на имена
-		names[n++] = path;
+		names[n++] = p;
 
 		// получаем информацию из inode по имени файла и записываем в буфер
 		if (stat(path, &stbuf) == -1) {
@@ -118,6 +126,7 @@ void listfiles(char *dirname, char **names) {
 		}	
 		
 		// очищаем память, выделенную под имя для формирования относительного пути
+		printf("path: %s\n", path);
 		free(path);
 	}
 
