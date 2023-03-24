@@ -34,16 +34,6 @@ char *getCorrectPath(char *s);
 
 int main(int argc, char **argv) {
 
-	char *pathname;
-
-	// работаем с каталогом из командной строки или с текущим
-	if (argc == 2) {
-		char *correctpath = getCorrectPath(argv[1]);
-		pathname = correctpath;
-	} else {
-		pathname = ".";
-	}
-
 	// структура
 	struct Names names;
 
@@ -55,21 +45,54 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	// &names - адрес структуры
-	if (listfiles(pathname, &names) == -1) {
-		return 1;
-	}
+	char *pathname;
 
-	// сортирую буфер с указателями на имена в алфавитном порядке
-	myqsort(names.items, 0, names.num - 1);
+	// работаем с каталогом из командной строки или с текущим
+	if (argc > 1) {
+		while (argc-- > 1) {
 
-	// вывожу каждое имя из буфера с указателями на имена
-	for (int i = 0; i < names.num; i++) {
-		printf("%s\n", names.items[i]);
-		// очищаю память, выделенную под имена
-		free(names.items[i]);
+			char *correctpath = getCorrectPath(*++argv);
+			pathname = correctpath;	
+			
+			// &names - адрес структуры
+			if (listfiles(pathname, &names) == -1) {
+				return 1;
+			}
+			
+			// сортирую буфер с указателями на имена в алфавитном порядке
+			myqsort(names.items, 0, names.num - 1);
+
+			// вывожу каждое имя из буфера с указателями на имена
+			printf("---%s:---\n", pathname);
+			for (int i = 0; i < names.num; i++) {
+				printf("%s\n", names.items[i]);
+				// очищаю память, выделенную под имена
+				free(names.items[i]);
+			}
+			free(names.items);
+			names.size = 5;
+			names.num = 0;	
+			putchar('\n');
+		}
+	} else {
+		pathname = ".";
+
+		// &names - адрес структуры
+		if (listfiles(pathname, &names) == -1) {
+			return 1;
+		}
+
+		// сортирую буфер с указателями на имена в алфавитном порядке
+		myqsort(names.items, 0, names.num - 1);
+
+		// вывожу каждое имя из буфера с указателями на имена
+		for (int i = 0; i < names.num; i++) {
+			printf("%s\n", names.items[i]);
+			// очищаю память, выделенную под имена
+			free(names.items[i]);
+		}
+		free(names.items);
 	}
-	free(names.items);
 	
 	return 0;
 }
@@ -129,7 +152,7 @@ int listfiles(char *dirname, struct Names *names) {
 				return -1;
 			}
 		}
-		
+
 		// записываю указатель на имя файла в буфер указателей на имена
 		names->items[names->num++] = path;
 
