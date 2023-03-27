@@ -40,49 +40,17 @@ int main(int argc, char **argv) {
 	names.size = 5;
 	names.num = 0;
 
+	if ((names.items = (char **) malloc(names.size * sizeof(char *))) == NULL) {
+		perror("malloc");
+		return 1;
+	}
+
 	char *pathname;
 
-	// работаем с каталогом из командной строки или с текущим
-	if (argc > 1) {
-		while (argc-- > 1) {
-
-			if ((names.items = (char **) malloc(names.size * sizeof(char *))) == NULL) {
-				perror("malloc");
-				return 1;
-			}
-
-			char *correctpath = getCorrectPath(*++argv);
-			pathname = correctpath;	
-			
-			// &names - адрес структуры
-			if (listfiles(pathname, &names) == -1) {
-				return 1;
-			}
-			
-			// сортирую буфер с указателями на имена в алфавитном порядке
-			myqsort(names.items, 0, names.num - 1);
-
-			// вывожу каждое имя из буфера с указателями на имена
-			printf("---%s:---\n", pathname);
-			for (int i = 0; i < names.num; i++) {
-				printf("%s\n", names.items[i]);
-				// очищаю память, выделенную под имена
-				free(names.items[i]);
-			}
-			free(names.items);
-			names.size = 5;
-			names.num = 0;	
-			putchar('\n');
-		}
-	} else {
-
-		if ((names.items = (char **) malloc(names.size * sizeof(char *))) == NULL) {
-			perror("malloc");
-			return 1;
-		}
-	
+	// если нет аргументов, работаем с текущим каталогом
+	if (argc == 1) {
 		pathname = ".";
-
+		
 		// &names - адрес структуры
 		if (listfiles(pathname, &names) == -1) {
 			return 1;
@@ -91,14 +59,47 @@ int main(int argc, char **argv) {
 		// сортирую буфер с указателями на имена в алфавитном порядке
 		myqsort(names.items, 0, names.num - 1);
 
-		// вывожу каждое имя из буфера с указателями на имена
+		// вывовод файлов
 		for (int i = 0; i < names.num; i++) {
 			printf("%s\n", names.items[i]);
-			// очищаю память, выделенную под имена
-			free(names.items[i]);
 		}
-		free(names.items);
+	} 
+	
+	int i = 0;
+
+	// если есть аргументы, работаем с ними
+	while (argc-- > 1) {
+		
+		char *correctpath = getCorrectPath(*++argv);
+		pathname = correctpath;	
+	
+		// &names - адрес структуры
+		if (listfiles(pathname, &names) == -1) {
+			return 1;
+		}
+
+		// сортирую буфер с указателями на имена в алфавитном порядке
+		myqsort(names.items, i, names.num - 1);
+				
+		// вывовод файлов
+		printf("---%s---\n", pathname);
+		for (; i < names.num; i++) {
+			printf("%s\n", names.items[i]);
+		}
+		putchar('\n');
 	}
+
+	// сортирую буфер с указателями на имена в алфавитном порядке
+	// myqsort(names.items, 0, names.num - 1);
+
+	// вывожу каждое имя из буфера с указателями на имена
+	for (int i = 0; i < names.num; i++) {
+		// printf("%s\n", names.items[i]);
+		
+		// очищаю память, выделенную под имена
+		free(names.items[i]);
+	}
+	free(names.items);
 	
 	return 0;
 }
