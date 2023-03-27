@@ -40,16 +40,16 @@ int main(int argc, char **argv) {
 	names.size = 5;
 	names.num = 0;
 
-	if ((names.items = (char **) malloc(names.size * sizeof(char *))) == NULL) {
-		perror("malloc");
-		return 1;
-	}
-
 	char *pathname;
 
 	// работаем с каталогом из командной строки или с текущим
 	if (argc > 1) {
 		while (argc-- > 1) {
+
+			if ((names.items = (char **) malloc(names.size * sizeof(char *))) == NULL) {
+				perror("malloc");
+				return 1;
+			}
 
 			char *correctpath = getCorrectPath(*++argv);
 			pathname = correctpath;	
@@ -75,6 +75,12 @@ int main(int argc, char **argv) {
 			putchar('\n');
 		}
 	} else {
+
+		if ((names.items = (char **) malloc(names.size * sizeof(char *))) == NULL) {
+			perror("malloc");
+			return 1;
+		}
+	
 		pathname = ".";
 
 		// &names - адрес структуры
