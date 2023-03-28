@@ -47,54 +47,39 @@ int main(int argc, char **argv) {
 
 	char *pathname;
 
-	// если нет аргументов, работаем с текущим каталогом
+	// если нет аргументов, добавляем в аргументы "."
 	if (argc == 1) {
-		pathname = ".";
-		
-		// &names - адрес структуры
-		if (listfiles(pathname, &names) == -1) {
-			return 1;
-		}
-
-		// сортирую буфер с указателями на имена в алфавитном порядке
-		myqsort(names.items, 0, names.num - 1);
-
-		// вывовод файлов
-		for (int i = 0; i < names.num; i++) {
-			printf("%s\n", names.items[i]);
-		}
-	} 
-	
-	int i = 0;
-
-	// если есть аргументы, работаем с ними
-	while (argc-- > 1) {
-		
-		char *correctpath = getCorrectPath(*++argv);
-		pathname = correctpath;	
-	
-		// &names - адрес структуры
-		if (listfiles(pathname, &names) == -1) {
-			return 1;
-		}
-
-		// сортирую буфер с указателями на имена в алфавитном порядке
-		myqsort(names.items, i, names.num - 1);
-				
-		// вывовод файлов
-		printf("---%s---\n", pathname);
-		for (; i < names.num; i++) {
-			printf("%s\n", names.items[i]);
-		}
-		putchar('\n');
+		argv[1] = ".";
+		++argc;
 	}
 
+	for (int i = 1; i < argc; i++) {
+		char *correctpath = getCorrectPath(argv[i]);
+		pathname = correctpath;
+	
+		// &names - адрес структуры
+		if (listfiles(pathname, &names) == -1) {
+			return 1;
+		}
+	}
+	
+	// while (argc-- > 1) {
+		// 
+		// char *correctpath = getCorrectPath(*++argv);
+		// pathname = correctpath;
+	// 
+		// // &names - адрес структуры
+		// if (listfiles(pathname, &names) == -1) {
+			// return 1;
+		// }
+	// }
+
 	// сортирую буфер с указателями на имена в алфавитном порядке
-	// myqsort(names.items, 0, names.num - 1);
+	myqsort(names.items, 0, names.num - 1);
 
 	// вывожу каждое имя из буфера с указателями на имена
 	for (int i = 0; i < names.num; i++) {
-		// printf("%s\n", names.items[i]);
+		printf("%s\n", names.items[i]);
 		
 		// очищаю память, выделенную под имена
 		free(names.items[i]);
@@ -123,7 +108,9 @@ int listfiles(char *dirname, struct Names *names) {
 	extern int errno;
 	struct dirent *dirbuf;
 	DIR *fd;
-	struct stat stbuf;	
+	struct stat stbuf;
+	
+	char is_written = 0;
 
 	// получаю структуру с файловым дескриптором и структурой первого файла: имя - номер индекса
 	if ((fd = opendir(dirname)) == NULL) { 
@@ -160,8 +147,17 @@ int listfiles(char *dirname, struct Names *names) {
 			}
 		}
 
-		// записываю указатель на имя файла в буфер указателей на имена
-		names->items[names->num++] = path;
+		// проверяем, записан ли уже этот путь в массив имен
+		for (int i = 0; i < names->num; i++) {
+			if (strcmp(path, names->items[i]) == 0) {
+				is_written = 1;
+			}
+		}
+
+		if (!is_written) {
+			// записываю указатель на имя файла в буфер указателей на имена
+			names->items[names->num++] = path;	
+		}
 
 		// получаем информацию из inode по имени файла и записываем в буфер
 		if (stat(path, &stbuf) == -1) {
