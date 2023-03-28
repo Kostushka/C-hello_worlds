@@ -47,14 +47,21 @@ int main(int argc, char **argv) {
 
 	char *pathname;
 
+	char **argvp;
+	int argcopy = argc;
+	
 	// если нет аргументов, добавляем в аргументы "."
-	if (argc == 1) {
-		argv[1] = ".";
-		++argc;
+	if (argcopy == 1) {
+		char *default_arg[] = {"."}; 
+		argvp = default_arg;
+	} else {
+		argvp = argv + 1;
+		// учитываем, что argc включает в аргументы и имя самой программы
+		--argcopy;
 	}
 
-	for (int i = 1; i < argc; i++) {
-		char *correctpath = getCorrectPath(argv[i]);
+	for (int i = 0; i < argcopy; i++) {
+		char *correctpath = getCorrectPath(argvp[i]);
 		pathname = correctpath;
 	
 		// &names - адрес структуры
@@ -63,30 +70,15 @@ int main(int argc, char **argv) {
 		}
 	}
 	
-	// while (argc-- > 1) {
-		// 
-		// char *correctpath = getCorrectPath(*++argv);
-		// pathname = correctpath;
-	// 
-		// // &names - адрес структуры
-		// if (listfiles(pathname, &names) == -1) {
-			// return 1;
-		// }
-	// }
-
 	// сортирую буфер с указателями на имена в алфавитном порядке
 	myqsort(names.items, 0, names.num - 1);
-
-	char itemdupl[100] = "";
 
 	// вывожу каждое имя из буфера с указателями на имена
 	for (int i = 0; i < names.num; i++) {
 
-		if (strcmp(names.items[i], itemdupl) != 0) {
-			printf("%s\n", names.items[i]);
+		if ((i + 1 == names.num) || (strcmp(names.items[i + 1], names.items[i]) != 0)) {
+			printf("%s\n", names.items[i]);	
 		}
-
-		strcpy(itemdupl, names.items[i]);
 
 		// очищаю память, выделенную под имена
 		free(names.items[i]);
@@ -116,9 +108,9 @@ int listfiles(char *dirname, struct Names *names) {
 	struct dirent *dirbuf;
 	DIR *fd;
 	struct stat stbuf;
-	
-	// char is_written = 0;
 
+	// char is_written = 0;
+	
 	// получаю структуру с файловым дескриптором и структурой первого файла: имя - номер индекса
 	if ((fd = opendir(dirname)) == NULL) { 
 		fprintf(stderr, "%s: %s\n", dirname, strerror(errno));
@@ -160,11 +152,13 @@ int listfiles(char *dirname, struct Names *names) {
 				// is_written = 1;
 			// }
 		// }
-
-		// if (!is_written) {
-			// записываю указатель на имя файла в буфер указателей на имена
-			names->items[names->num++] = path;	
+// 
+		// if (is_written) {
+			// continue;
 		// }
+	
+		// записываю указатель на имя файла в буфер указателей на имена
+		names->items[names->num++] = path;	
 
 		// получаем информацию из inode по имени файла и записываем в буфер
 		if (stat(path, &stbuf) == -1) {
