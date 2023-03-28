@@ -77,10 +77,17 @@ int main(int argc, char **argv) {
 	// сортирую буфер с указателями на имена в алфавитном порядке
 	myqsort(names.items, 0, names.num - 1);
 
+	char itemdupl[100] = "";
+
 	// вывожу каждое имя из буфера с указателями на имена
 	for (int i = 0; i < names.num; i++) {
-		printf("%s\n", names.items[i]);
-		
+
+		if (strcmp(names.items[i], itemdupl) != 0) {
+			printf("%s\n", names.items[i]);
+		}
+
+		strcpy(itemdupl, names.items[i]);
+
 		// очищаю память, выделенную под имена
 		free(names.items[i]);
 	}
@@ -110,7 +117,7 @@ int listfiles(char *dirname, struct Names *names) {
 	DIR *fd;
 	struct stat stbuf;
 	
-	char is_written = 0;
+	// char is_written = 0;
 
 	// получаю структуру с файловым дескриптором и структурой первого файла: имя - номер индекса
 	if ((fd = opendir(dirname)) == NULL) { 
@@ -148,16 +155,16 @@ int listfiles(char *dirname, struct Names *names) {
 		}
 
 		// проверяем, записан ли уже этот путь в массив имен
-		for (int i = 0; i < names->num; i++) {
-			if (strcmp(path, names->items[i]) == 0) {
-				is_written = 1;
-			}
-		}
+		// for (int i = 0; i < names->num; i++) {
+			// if (strcmp(path, names->items[i]) == 0) {
+				// is_written = 1;
+			// }
+		// }
 
-		if (!is_written) {
+		// if (!is_written) {
 			// записываю указатель на имя файла в буфер указателей на имена
 			names->items[names->num++] = path;	
-		}
+		// }
 
 		// получаем информацию из inode по имени файла и записываем в буфер
 		if (stat(path, &stbuf) == -1) {
