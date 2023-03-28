@@ -37,9 +37,12 @@ int main(int argc, char **argv) {
 	// структура
 	struct Names names;
 
+	// максимальное кол-во указателей на имена
 	names.size = 5;
+	// записанное кол-во указателей на имена
 	names.num = 0;
 
+	// выделение памяти под массив с 5 указателями на имена
 	if ((names.items = (char **) malloc(names.size * sizeof(char *))) == NULL) {
 		perror("malloc");
 		return 1;
@@ -47,23 +50,30 @@ int main(int argc, char **argv) {
 
 	char *pathname;
 
+	// массив аргументов
 	char **argvp;
+	// копия argc для изменения данной переменной
 	int argcopy = argc;
 	
 	// если нет аргументов, добавляем в аргументы "."
 	if (argcopy == 1) {
-		char *default_arg[] = {"."}; 
+		// объявляем массив указателей с одним указателем: "."
+		char *default_arg[] = {"."};
 		argvp = default_arg;
 	} else {
+		// если аргументы переданы программе, сдвигаем адрес с имени самой программы на первый аргумент
+		// *argv[] = {"./a.out", "arg1", "arg2", ...}
 		argvp = argv + 1;
 		// учитываем, что argc включает в аргументы и имя самой программы
 		--argcopy;
 	}
 
 	for (int i = 0; i < argcopy; i++) {
+		// из каждого аргумента формируем корректный путь (без /, если он есть)
 		char *correctpath = getCorrectPath(argvp[i]);
 		pathname = correctpath;
 	
+		// записываем в буфер структуры рекурсивно все указатели на имена файлов, полученные по переданным путям
 		// &names - адрес структуры
 		if (listfiles(pathname, &names) == -1) {
 			return 1;
@@ -73,16 +83,25 @@ int main(int argc, char **argv) {
 	// сортирую буфер с указателями на имена в алфавитном порядке
 	myqsort(names.items, 0, names.num - 1);
 
-	// вывожу каждое имя из буфера с указателями на имена
-	for (int i = 0; i < names.num; i++) {
+	// исключаю дубликаты отсортированных указателей на имена при выводе
+	// вывожу имена из буфера: прохожусь по всем именам кроме последнего
+	for (int i = 0; i < names.num - 1; i++) {
 
-		if ((i + 1 == names.num) || (strcmp(names.items[i + 1], names.items[i]) != 0)) {
+		// сравниваю текущее имя со следующим: при совпадении текущее имя пропускаю
+		// например, names.num = 5 => 0 1 2 3 4 => 0 1 | 1 2 | 2 3 | 3 4
+		if (strcmp(names.items[i + 1], names.items[i]) != 0) {
 			printf("%s\n", names.items[i]);	
 		}
 
-		// очищаю память, выделенную под имена
+		// очищаю память, выделенную под указатели на имена
 		free(names.items[i]);
 	}
+
+	// последнее имя в буфере с указателями на имена должно выводиться всегда
+	printf("%s\n", names.items[names.num - 1]);
+	free(names.items[names.num - 1]);
+
+	// очищаю память, выделенную под массив указателей
 	free(names.items);
 	
 	return 0;
@@ -152,7 +171,7 @@ int listfiles(char *dirname, struct Names *names) {
 				// is_written = 1;
 			// }
 		// }
-// 
+
 		// if (is_written) {
 			// continue;
 		// }
