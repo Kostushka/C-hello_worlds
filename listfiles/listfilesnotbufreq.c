@@ -31,9 +31,69 @@ void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
 int listfiles(char *dirname, struct Names *names);
 char *getCorrectPath(char *s);
+int isInlcudesLine(char *s, char *t);
 
 int main(int argc, char **argv) {
 
+	// массив указателей на полные пути от корня
+	char **realpathbuf;
+	// массив указателей на полные пути от корня без дублей
+	char **pathbuf;
+
+	if (argc > 1) {
+		// выделение памяти под буфер для указателей
+		if ((realpathbuf = (char **) malloc((argc - 1) * sizeof(char *))) == NULL) {
+			perror("malloc");
+			return 1;
+		}
+
+		int i = 0;
+		int argcpy = argc;
+		
+		// самая короткая строка из всех аргументов
+		char *shortestline;
+		
+		// индекс самой короткой строки
+		int shortestindex = 0;
+		
+		// длина самой короткой строки: по умолчанию первый аргумент
+		int minlength = strlen(realpath(argv[1], NULL));
+		
+		while (argcpy > 1) {
+			// с помощью библиотечной realpath() получаем для каждого аргумента полный путь от корня
+			realpathbuf[i] = realpath(argv[i + 1], NULL);
+
+			// вычисляем индекс самой короткой строки из всех аргументов
+			if (minlength > (int) strlen(realpathbuf[i])) {
+				minlength = (int) strlen(realpathbuf[i]);
+				shortestindex = i;
+			}
+			
+			--argcpy;
+			++i;
+		}
+
+		// записываем самую короткую строку
+		shortestline = realpathbuf[shortestindex];
+
+		// выделение памяти под буфер для указателей
+		if ((pathbuf = (char **) malloc((argc - 1) * sizeof(char *))) == NULL) {
+			perror("malloc");
+			return 1;
+		}
+
+		int k = 0;
+		for (int i = 0; i < argc - 1; i++) {
+			// сравниваем самую короткую строку из аргументов со всеми агументами
+			// если самая короткая строка при полном совпадении с аргументом заканчивается \0, пропускаем текущий аргумент
+			// например: /home/nastya и /home/nastya/d1 => пропуск /home/nastya/d1
+			if (isInlcudesLine(shortestline, realpathbuf[i]) != -1) {
+				pathbuf[k] = realpathbuf[i];
+				++k;
+			}
+		}
+	}
+	
 	// структура
 	struct Names names;
 
@@ -63,7 +123,8 @@ int main(int argc, char **argv) {
 	} else {
 		// если аргументы переданы программе, сдвигаем адрес с имени самой программы на первый аргумент
 		// *argv[] = {"./a.out", "arg1", "arg2", ...}
-		argvp = argv + 1;
+		// argvp = argv + 1;
+		argvp = pathbuf;
 		// учитываем, что argc включает в аргументы и имя самой программы
 		--argcopy;
 	}
@@ -79,10 +140,18 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
-	
+
 	// сортирую буфер с указателями на имена в алфавитном порядке
 	myqsort(names.items, 0, names.num - 1);
 
+	for (int i = 0; i < names.num; i++) {
+		printf("%s\n", names.items[i]);
+		free(names.items[i]);	
+	}
+
+	free(names.items);
+	
+	/*
 	// исключаю дубликаты отсортированных указателей на имена при выводе
 	// вывожу имена из буфера: прохожусь по всем именам кроме последнего
 	for (int i = 0; i < names.num - 1; i++) {
@@ -90,7 +159,7 @@ int main(int argc, char **argv) {
 		// сравниваю текущее имя со следующим: при совпадении текущее имя пропускаю
 		// например, names.num = 5 => 0 1 2 3 4 => 0 1 | 1 2 | 2 3 | 3 4
 		if (strcmp(names.items[i + 1], names.items[i]) != 0) {
-			printf("%s\n", names.items[i]);	
+			printf("%s\n", names.items[i]);
 		}
 
 		// очищаю память, выделенную под указатели на имена
@@ -103,8 +172,24 @@ int main(int argc, char **argv) {
 
 	// очищаю память, выделенную под массив указателей
 	free(names.items);
+	*/
 	
 	return 0;
+}
+
+int isInlcudesLine(char *s, char *t) {
+	while (*s == *t) {
+		if (*t == '\0') {
+			return 0;
+		}
+		
+		++s;
+		++t;
+	}
+	if (*s == '\0') {
+		return -1;
+	}
+	return *s - *t;
 }
 
 char *getCorrectPath(char *s) {
@@ -122,7 +207,6 @@ char *getCorrectPath(char *s) {
 }
 
 int listfiles(char *dirname, struct Names *names) {
-
 	extern int errno;
 	struct dirent *dirbuf;
 	DIR *fd;
@@ -149,7 +233,7 @@ int listfiles(char *dirname, struct Names *names) {
 			perror("malloc");
 			return -1;
 		}
-		
+
 		// записываем имя в выделенный буфер + /: например ./
 		strcpy(path, dirname);
 		strcat(path, "/");
@@ -175,7 +259,7 @@ int listfiles(char *dirname, struct Names *names) {
 		// if (is_written) {
 			// continue;
 		// }
-	
+
 		// записываю указатель на имя файла в буфер указателей на имена
 		names->items[names->num++] = path;	
 
