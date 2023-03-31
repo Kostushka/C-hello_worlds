@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include "listfilesnotbufreq.h"
 
+extern struct Block *hashtab[];
 
 // Программа выводит отсортированный в алфавитном порядке список файлов в текущем каталоге
 
@@ -31,11 +33,11 @@ void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
 int listfiles(char *dirname, struct Names *names);
 char *getCorrectPath(char *s);
-int isInlcudesLine(char *s, char *t);
+int isIncludesLine(char *s, char *t);
 
 int main(int argc, char **argv) {
 
-	// массив указателей на полные пути от корня
+	/*// массив указателей на полные пути от корня
 	char **realpathbuf;
 	// массив указателей на полные пути от корня без дублей
 	char **pathbuf;
@@ -87,12 +89,13 @@ int main(int argc, char **argv) {
 			// сравниваем самую короткую строку из аргументов со всеми агументами
 			// если самая короткая строка при полном совпадении с аргументом заканчивается \0, пропускаем текущий аргумент
 			// например: /home/nastya и /home/nastya/d1 => пропуск /home/nastya/d1
-			if (isInlcudesLine(shortestline, realpathbuf[i]) != -1) {
+			if (isIncludesLine(shortestline, realpathbuf[i]) != -1) {
 				pathbuf[k] = realpathbuf[i];
+				printf("PATH: %s\n", pathbuf[k]);
 				++k;
 			}
 		}
-	}
+	}*/
 	
 	// структура
 	struct Names names;
@@ -123,8 +126,8 @@ int main(int argc, char **argv) {
 	} else {
 		// если аргументы переданы программе, сдвигаем адрес с имени самой программы на первый аргумент
 		// *argv[] = {"./a.out", "arg1", "arg2", ...}
-		// argvp = argv + 1;
-		argvp = pathbuf;
+		argvp = argv + 1;
+		// argvp = pathbuf;
 		// учитываем, что argc включает в аргументы и имя самой программы
 		--argcopy;
 	}
@@ -146,7 +149,8 @@ int main(int argc, char **argv) {
 
 	for (int i = 0; i < names.num; i++) {
 		printf("%s\n", names.items[i]);
-		free(names.items[i]);	
+		free(names.items[i]);
+		free(hashtab[i]);	
 	}
 
 	free(names.items);
@@ -177,20 +181,20 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-int isInlcudesLine(char *s, char *t) {
-	while (*s == *t) {
-		if (*t == '\0') {
-			return 0;
-		}
-		
-		++s;
-		++t;
-	}
-	if (*s == '\0') {
-		return -1;
-	}
-	return *s - *t;
-}
+// int isIncludesLine(char *s, char *t) {
+	// while (*s == *t) {
+		// if (*t == '\0') {
+			// return 0;
+		// }
+		// 
+		// ++s;
+		// ++t;
+	// }
+	// if (*s == '\0') {
+		// return -1;
+	// }
+	// return *s - *t;
+// }
 
 char *getCorrectPath(char *s) {
 
@@ -259,6 +263,10 @@ int listfiles(char *dirname, struct Names *names) {
 		// if (is_written) {
 			// continue;
 		// }
+
+		if (addhash(hashtab, path) == 1) {
+			continue;
+		}
 
 		// записываю указатель на имя файла в буфер указателей на имена
 		names->items[names->num++] = path;	
