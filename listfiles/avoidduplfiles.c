@@ -62,7 +62,7 @@ int getNotDuplPaths(char **argv, int len, char ***paths) {
 	for (int i = 0; i < len; i++) {
 		// записываем пути в новый массив указателей
 		if (argv[i] != NULL) {
-			*paths[k++] = argv[i];
+			(*paths)[k++] = argv[i];
 		}
 	}
 	
