@@ -10,7 +10,7 @@ unsigned hashfunc(char *s) {
 	for (hashvalue = 0; *s != '\0'; s++) {
 		hashvalue = *s + 31 * hashvalue;
 	}
-	return hashvalue % 100;
+	return hashvalue % 1000;
 }
 
 int findhash(char *key, struct Block **hashtab) {

@@ -7,7 +7,7 @@
 #include <errno.h>
 #include "listfilesnotbufreq.h"
 
-extern struct Block *hashtab[];
+// extern struct Block *hashtab[];
 
 // Программа выводит отсортированный в алфавитном порядке список файлов в текущем каталоге
 
@@ -33,70 +33,19 @@ void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
 int listfiles(char *dirname, struct Names *names);
 char *getCorrectPath(char *s);
-int isIncludesLine(char *s, char *t);
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) {		
 
-	/*// массив указателей на полные пути от корня
-	char **realpathbuf;
-	// массив указателей на полные пути от корня без дублей
-	char **pathbuf;
-
+	// исключаем пути с дублями файлов
+	// массив с нужными путями
+	char **paths;
+	// кол-во нужных путей
+	int length;
+	// если есть аргументы
 	if (argc > 1) {
-		// выделение памяти под буфер для указателей
-		if ((realpathbuf = (char **) malloc((argc - 1) * sizeof(char *))) == NULL) {
-			perror("malloc");
-			return 1;
-		}
+		length = getNotDuplPaths(argv + 1, argc - 1, &paths);
+	}
 
-		int i = 0;
-		int argcpy = argc;
-		
-		// самая короткая строка из всех аргументов
-		char *shortestline;
-		
-		// индекс самой короткой строки
-		int shortestindex = 0;
-		
-		// длина самой короткой строки: по умолчанию первый аргумент
-		int minlength = strlen(realpath(argv[1], NULL));
-		
-		while (argcpy > 1) {
-			// с помощью библиотечной realpath() получаем для каждого аргумента полный путь от корня
-			realpathbuf[i] = realpath(argv[i + 1], NULL);
-
-			// вычисляем индекс самой короткой строки из всех аргументов
-			if (minlength > (int) strlen(realpathbuf[i])) {
-				minlength = (int) strlen(realpathbuf[i]);
-				shortestindex = i;
-			}
-			
-			--argcpy;
-			++i;
-		}
-
-		// записываем самую короткую строку
-		shortestline = realpathbuf[shortestindex];
-
-		// выделение памяти под буфер для указателей
-		if ((pathbuf = (char **) malloc((argc - 1) * sizeof(char *))) == NULL) {
-			perror("malloc");
-			return 1;
-		}
-
-		int k = 0;
-		for (int i = 0; i < argc - 1; i++) {
-			// сравниваем самую короткую строку из аргументов со всеми агументами
-			// если самая короткая строка при полном совпадении с аргументом заканчивается \0, пропускаем текущий аргумент
-			// например: /home/nastya и /home/nastya/d1 => пропуск /home/nastya/d1
-			if (isIncludesLine(shortestline, realpathbuf[i]) != -1) {
-				pathbuf[k] = realpathbuf[i];
-				printf("PATH: %s\n", pathbuf[k]);
-				++k;
-			}
-		}
-	}*/
-	
 	// структура
 	struct Names names;
 
@@ -126,10 +75,11 @@ int main(int argc, char **argv) {
 	} else {
 		// если аргументы переданы программе, сдвигаем адрес с имени самой программы на первый аргумент
 		// *argv[] = {"./a.out", "arg1", "arg2", ...}
-		argvp = argv + 1;
-		// argvp = pathbuf;
+		// argvp = argv + 1;
+		argvp = paths;
 		// учитываем, что argc включает в аргументы и имя самой программы
-		--argcopy;
+		// --argcopy;
+		argcopy = length;
 	}
 
 	for (int i = 0; i < argcopy; i++) {
@@ -150,7 +100,7 @@ int main(int argc, char **argv) {
 	for (int i = 0; i < names.num; i++) {
 		printf("%s\n", names.items[i]);
 		free(names.items[i]);
-		free(hashtab[i]);	
+		// free(hashtab[i]);
 	}
 
 	free(names.items);
@@ -181,26 +131,12 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-// int isIncludesLine(char *s, char *t) {
-	// while (*s == *t) {
-		// if (*t == '\0') {
-			// return 0;
-		// }
-		// 
-		// ++s;
-		// ++t;
-	// }
-	// if (*s == '\0') {
-		// return -1;
-	// }
-	// return *s - *t;
-// }
-
 char *getCorrectPath(char *s) {
 
 	char *t = s;
 	
 	// *s - указывает на последний символ
+	// работаю с локальной копией
 	s += strlen(s) - 1;
 	
 	if (*s == '/') {
@@ -264,9 +200,9 @@ int listfiles(char *dirname, struct Names *names) {
 			// continue;
 		// }
 
-		if (addhash(hashtab, path) == 1) {
-			continue;
-		}
+		// if (addhash(hashtab, path) == 1) {
+			// continue;
+		// }
 
 		// записываю указатель на имя файла в буфер указателей на имена
 		names->items[names->num++] = path;	
