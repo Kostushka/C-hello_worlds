@@ -7,8 +7,7 @@
 #include <errno.h>
 #include "listfilesnotbufreq.h"
 
-extern struct Block *hashtab[];
-// struct Block **hashtab;
+struct Hash *hashtab = NULL;
 
 // Программа выводит отсортированный в алфавитном порядке список файлов в текущем каталоге
 
@@ -35,8 +34,13 @@ void swap(char *s[], int i, int j);
 int listfiles(char *dirname, struct Names *names);
 char *getCorrectPath(char *s);
 
-int main(int argc, char **argv) {	
-
+int main(int argc, char **argv) {
+	
+	fprintf(stderr, "%d\n", addhash("key", &hashtab));
+	struct Block *m = hashtab->hashtab[hashfunc("key")];
+	fprintf(stderr, "%d\n", m->value);
+	fprintf(stderr, "%d\n", addhash("key", &hashtab));
+	
 	/*
 	// исключаем пути с дублями файлов
 	// массив с нужными путями
@@ -102,7 +106,14 @@ int main(int argc, char **argv) {
 
 	for (int i = 0; i < names.num; i++) {
 		printf("%s\n", names.items[i]);
-		printf("key: %s\n", hashtab[hashfunc(names.items[i])]->key);
+		// if (findhash(names.items[i])) {
+			// printf("key: 1\n");
+		// }
+		// for (struct Block *p = hashtab[hashfunc(names.items[i])]; p != NULL; p = p->p) {
+			// if (strcmp(p->key, names.items[i]) == 0) {
+				// printf("key: %s\n", p->key);
+			// }
+		// }
 		// free(hashtab[hashfunc(names.items[i])]);
 		free(names.items[i]);
 	}
@@ -205,7 +216,7 @@ int listfiles(char *dirname, struct Names *names) {
 		// }
 
 		// если путь уже есть в хэше, то пропускаем работу с этим путем
-		if (addhash(path) == 1) {
+		if (addhash(path, &hashtab) == 1) {
 			continue;
 		}
 
