@@ -6,4 +6,4 @@ struct Block {
 int getNotDuplPaths(char **, int, char ***);
 unsigned hashfunc(char *);
 int findhash(char *, struct Block **);
-int addhash(struct Block **, char *);
+int addhash(struct Block ***, char *);

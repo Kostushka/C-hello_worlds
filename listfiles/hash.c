@@ -3,7 +3,10 @@
 #include <string.h>
 #include "listfilesnotbufreq.h"
 
-struct Block *hashtab[1000];
+static struct Block **hashtab;
+
+int size_hashtab = 10;
+int count_struct = 0;
 
 // по ключу (строке) получаем число (индекс в буфере)
 unsigned hashfunc(char *s) {
@@ -11,7 +14,7 @@ unsigned hashfunc(char *s) {
 	for (hashvalue = 0; *s != '\0'; s++) {
 		hashvalue = *s + 31 * hashvalue;
 	}
-	return hashvalue % 1000;
+	return hashvalue % size_hashtab;
 }
 
 int findhash(char *key, struct Block **hashtab) {
@@ -27,31 +30,55 @@ int findhash(char *key, struct Block **hashtab) {
 	return 0;
 }
 
-int addhash(struct Block **hashtab, char *key) {
+int addhash(struct Block ***phashtab, char *key) {
 	struct Block *p;
-	// проверяем что в хэше нет структуры по ключу
-	if (findhash(key, hashtab) == 0) {
-		// выделяем память под новую структуру, записываем в указатель
-		if ((p = (struct Block *) malloc(sizeof(struct Block))) == NULL) {
+
+	hashtab = *phashtab; 
+
+	if (count_struct == 0) {
+		if ((hashtab = (struct Block **) malloc(sizeof(struct Block *) * size_hashtab)) == NULL) {
 			perror("malloc");
 			return -1;
 		}
-		// выделяем память под ключ (строку)
-		if ((p->key = (char *) malloc(strlen(key) + 1)) == NULL) {
-			perror("malloc");
+	}
+
+	if (count_struct == size_hashtab) {
+		size_hashtab *= 2;
+		if ((hashtab = (struct Block **) realloc(hashtab, sizeof(struct Block *) * size_hashtab)) == NULL) {
+			perror("realloc");
 			return -1;
 		}
-		// записываем ключ в структуре
-		strcpy(p->key, key);
-		// записываем значение в структуре
-		p->value = 1;
-		// записываем ссылку на другую структуру
-		p->p = NULL;
-		// записываем указатель на структуру в хэш
-		hashtab[hashfunc(key)] = p;
-		return 0;
-	} else {
-	// в хэше уже есть структура по ключу
+	}
+	
+	// проверяем наличие в хэше структуры по ключу
+	if (findhash(key, hashtab)) {
+		// в хэше уже есть структура по данному ключу
 		return 1;
 	}
+	// выделяем память под новую структуру, записываем в указатель
+	if ((p = (struct Block *) malloc(sizeof(struct Block))) == NULL) {
+		perror("malloc");
+		return -1;
+	}
+	
+	++count_struct;
+	
+	// выделяем память под ключ (строку)
+	if ((p->key = (char *) malloc(strlen(key) + 1)) == NULL) {
+		perror("malloc");
+		return -1;
+	}
+	
+	// записываем ключ в структуре
+	strcpy(p->key, key);
+	// записываем значение в структуре
+	p->value = 1;
+	// записываем указатель на предыдущую структуру, записанную по этому индексу в массив или NULL, если это первая запись 
+	p->p = hashtab[hashfunc(key)];
+	// записываем указатель на эту структуру в хэш по данному индексу
+	hashtab[hashfunc(key)] = p;
+
+	*phashtab = hashtab;
+	
+	return 0;
 }

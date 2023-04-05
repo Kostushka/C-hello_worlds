@@ -7,6 +7,9 @@ int includePath(char *curr, char *check);
 
 int getNotDuplPaths(char **argv, int len, char ***paths) {
 
+	// локальный массив нужных путей
+	char **well_paths;
+
 	// с помощью  бибилиотечной realpath() получаем для каждого аргумента полный путь от /
 	for (int i = 0; i < len; i++) {
 		argv[i] = realpath(argv[i], NULL);
@@ -14,12 +17,10 @@ int getNotDuplPaths(char **argv, int len, char ***paths) {
 
 	// если один аргумент
 	if (len == 1) {
-		if ((*paths = (char **) malloc(sizeof(char *))) == NULL) {
-			perror("malloc");
-			exit(1);
-		}
-		// записываем исходный массив с путем
+	
+		// записываем исходный массив с путем в переменную по адресу
 		*paths = argv;
+		
 		// кол-во путей: 1
 		return 1;
 	}
@@ -52,7 +53,7 @@ int getNotDuplPaths(char **argv, int len, char ***paths) {
 	}
 
 	// выделяем память для массива указателей нужных нам путей (длина: кол-во всех путей - кол-во NULL)
-	if ((*paths = (char **) malloc(sizeof(char *) * (len - countNull))) == NULL) {
+	if ((well_paths = (char **) malloc(sizeof(char *) * (len - countNull))) == NULL) {
 		perror("malloc");
 		exit(1);
 	}
@@ -62,9 +63,12 @@ int getNotDuplPaths(char **argv, int len, char ***paths) {
 	for (int i = 0; i < len; i++) {
 		// записываем пути в новый массив указателей
 		if (argv[i] != NULL) {
-			(*paths)[k++] = argv[i];
+			well_paths[k++] = argv[i];
 		}
 	}
+
+	// записываем массив нужных путей по адресу в переменную
+	*paths = well_paths;
 	
 	// возвращаем длину конечного массива нужных путей 
 	return len - countNull;
