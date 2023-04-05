@@ -7,8 +7,8 @@
 #include <errno.h>
 #include "listfilesnotbufreq.h"
 
-// extern struct Block *hashtab[];
-struct Block **hashtab;
+extern struct Block *hashtab[];
+// struct Block **hashtab;
 
 // Программа выводит отсортированный в алфавитном порядке список файлов в текущем каталоге
 
@@ -102,6 +102,7 @@ int main(int argc, char **argv) {
 
 	for (int i = 0; i < names.num; i++) {
 		printf("%s\n", names.items[i]);
+		printf("key: %s\n", hashtab[hashfunc(names.items[i])]->key);
 		// free(hashtab[hashfunc(names.items[i])]);
 		free(names.items[i]);
 	}
@@ -204,7 +205,7 @@ int listfiles(char *dirname, struct Names *names) {
 		// }
 
 		// если путь уже есть в хэше, то пропускаем работу с этим путем
-		if (addhash(&hashtab, path) == 1) {
+		if (addhash(path) == 1) {
 			continue;
 		}
 

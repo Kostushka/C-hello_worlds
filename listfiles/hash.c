@@ -3,7 +3,7 @@
 #include <string.h>
 #include "listfilesnotbufreq.h"
 
-static struct Block **hashtab;
+struct Block **hashtab;
 
 int size_hashtab = 10;
 int count_struct = 0;
@@ -17,7 +17,7 @@ unsigned hashfunc(char *s) {
 	return hashvalue % size_hashtab;
 }
 
-int findhash(char *key, struct Block **hashtab) {
+int findhash(char *key) {
 	struct Block *p;
 	// в указатель на структуру получаем адрес структуры из хэша или NULL
 	for (p = hashtab[hashfunc(key)]; p != NULL; p = p->p) {
@@ -30,11 +30,9 @@ int findhash(char *key, struct Block **hashtab) {
 	return 0;
 }
 
-int addhash(struct Block ***phashtab, char *key) {
+int addhash(char *key) {
 	struct Block *p;
-
-	hashtab = *phashtab; 
-
+	
 	if (count_struct == 0) {
 		if ((hashtab = (struct Block **) malloc(sizeof(struct Block *) * size_hashtab)) == NULL) {
 			perror("malloc");
@@ -51,7 +49,7 @@ int addhash(struct Block ***phashtab, char *key) {
 	}
 	
 	// проверяем наличие в хэше структуры по ключу
-	if (findhash(key, hashtab)) {
+	if (findhash(key)) {
 		// в хэше уже есть структура по данному ключу
 		return 1;
 	}
@@ -77,8 +75,6 @@ int addhash(struct Block ***phashtab, char *key) {
 	p->p = hashtab[hashfunc(key)];
 	// записываем указатель на эту структуру в хэш по данному индексу
 	hashtab[hashfunc(key)] = p;
-
-	*phashtab = hashtab;
 	
 	return 0;
 }

@@ -3,7 +3,9 @@ struct Block {
 	int value;
 	struct Block *p;
 };
-int getNotDuplPaths(char **, int, char ***);
 unsigned hashfunc(char *);
-int findhash(char *, struct Block **);
-int addhash(struct Block ***, char *);
+int findhash(char *);
+int addhash(char *);
+
+int getNotDuplPaths(char **, int, char ***);
+
