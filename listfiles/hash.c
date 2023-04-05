@@ -37,12 +37,11 @@ int addhash(char *key, struct Hash **phash) {
 			perror("malloc");
 			return -1;
 		}
-	}
 
-	hash->size_hashtab = 10;
-	hash->count_struct = 0;
-	
-	if (hash->count_struct == 0) {
+		hash->size_hashtab = 10;
+		hash->count_struct = 0;
+
+		
 		if ((hash->hashtab = (struct Block **) malloc(sizeof(struct Block *) * hash->size_hashtab)) == NULL) {
 			perror("malloc");
 			return -1;
@@ -59,7 +58,6 @@ int addhash(char *key, struct Hash **phash) {
 	
 	// проверяем наличие в хэше структуры по ключу
 	if (findhash(key, hash->hashtab)) {
-		*phash = hash;
 		// в хэше уже есть структура по данному ключу
 		return 1;
 	}
@@ -85,11 +83,9 @@ int addhash(char *key, struct Hash **phash) {
 	// записываем значение в структуре
 	p->value = 1;
 	// записываем указатель на предыдущую структуру, записанную по этому индексу в массив или NULL, если это первая запись 
-	fprintf(stderr, "h1: %p key: %s\n", hash->hashtab[hashfunc(key)], key);
 	p->p = hash->hashtab[hashfunc(key)];
 	// записываем указатель на эту структуру в хэш по данному индексу
 	hash->hashtab[hashfunc(key)] = p;
-	fprintf(stderr, "h2: %p key: %s\n", hash->hashtab[hashfunc(key)], key);
 
 
 	*phash = hash;

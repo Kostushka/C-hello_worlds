@@ -36,11 +36,6 @@ char *getCorrectPath(char *s);
 
 int main(int argc, char **argv) {
 	
-	fprintf(stderr, "%d\n", addhash("key", &hashtab));
-	struct Block *m = hashtab->hashtab[hashfunc("key")];
-	fprintf(stderr, "%d\n", m->value);
-	fprintf(stderr, "%d\n", addhash("key", &hashtab));
-	
 	/*
 	// исключаем пути с дублями файлов
 	// массив с нужными путями
@@ -106,14 +101,14 @@ int main(int argc, char **argv) {
 
 	for (int i = 0; i < names.num; i++) {
 		printf("%s\n", names.items[i]);
-		// if (findhash(names.items[i])) {
+		// if (findhash(names.items[i], hashtab->hashtab)) {
 			// printf("key: 1\n");
 		// }
-		// for (struct Block *p = hashtab[hashfunc(names.items[i])]; p != NULL; p = p->p) {
-			// if (strcmp(p->key, names.items[i]) == 0) {
-				// printf("key: %s\n", p->key);
-			// }
-		// }
+		for (struct Block *p = hashtab->hashtab[hashfunc(names.items[i])]; p != NULL; p = p->p) {
+			if (strcmp(p->key, names.items[i]) == 0) {
+				printf("key: %s\n", p->key);
+			}
+		}
 		// free(hashtab[hashfunc(names.items[i])]);
 		free(names.items[i]);
 	}
