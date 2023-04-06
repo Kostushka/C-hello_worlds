@@ -9,10 +9,10 @@ struct Hash {
 	int count_struct;
 	int size_hashtab;	
 };
-
-unsigned hashfunc(char *);
-int findhash(char *, struct Block **);
-int addhash(char *, struct Hash **);
+struct Hash *createhash(int);
+unsigned hashfunc(struct Hash *, char *);
+int findhash(struct Hash *, char *);
+int addhash(struct Hash *, char *);
 
 int getNotDuplPaths(char **, int, char ***);
 

@@ -6,8 +6,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "listfilesnotbufreq.h"
-
-struct Hash *hashtab = NULL;
+#define SIZE 10
 
 // Программа выводит отсортированный в алфавитном порядке список файлов в текущем каталоге
 
@@ -31,10 +30,25 @@ struct Names {
 int mystrcmp(char *s, char *t);
 void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
-int listfiles(char *dirname, struct Names *names);
+int listfiles(struct Hash *hash, char *dirname, struct Names *names);
 char *getCorrectPath(char *s);
 
 int main(int argc, char **argv) {
+
+	// создаю хэш и записываю указатель на него
+	struct Hash *hash = createhash(SIZE);
+	if (hash == NULL) {
+		return -1;
+	}
+	
+	// struct Hash hash;
+	// 
+    // if ((hash.hashtab = (struct Block **) malloc(sizeof(struct Block *) * SIZE)) == NULL) {
+        // perror("malloc");
+        // return -1;
+    // }
+    // hash.size_hashtab = SIZE;
+    // hash.count_struct = 0;
 	
 	/*
 	// исключаем пути с дублями файлов
@@ -91,7 +105,7 @@ int main(int argc, char **argv) {
 	
 		// записываем в буфер структуры рекурсивно все указатели на имена файлов, полученные по переданным путям
 		// &names - адрес структуры
-		if (listfiles(pathname, &names) == -1) {
+		if (listfiles(hash, pathname, &names) == -1) {
 			return 1;
 		}
 	}
@@ -101,18 +115,10 @@ int main(int argc, char **argv) {
 
 	for (int i = 0; i < names.num; i++) {
 		printf("%s\n", names.items[i]);
-		// if (findhash(names.items[i], hashtab->hashtab)) {
-			// printf("key: 1\n");
-		// }
-		for (struct Block *p = hashtab->hashtab[hashfunc(names.items[i])]; p != NULL; p = p->p) {
-			if (strcmp(p->key, names.items[i]) == 0) {
-				printf("key: %s\n", p->key);
-			}
-		}
-		// free(hashtab[hashfunc(names.items[i])]);
 		free(names.items[i]);
 	}
 
+	free(hash);
 	free(names.items);
 	
 	/*
@@ -156,7 +162,7 @@ char *getCorrectPath(char *s) {
 	return t;
 }
 
-int listfiles(char *dirname, struct Names *names) {
+int listfiles(struct Hash *hash, char *dirname, struct Names *names) {
 	extern int errno;
 	struct dirent *dirbuf;
 	DIR *fd;
@@ -211,7 +217,7 @@ int listfiles(char *dirname, struct Names *names) {
 		// }
 
 		// если путь уже есть в хэше, то пропускаем работу с этим путем
-		if (addhash(path, &hashtab) == 1) {
+		if (addhash(hash, path) == 1) {
 			continue;
 		}
 
@@ -226,7 +232,7 @@ int listfiles(char *dirname, struct Names *names) {
 		// проверяем по данным из inode, что файл - каталог
 		if (S_ISDIR(stbuf.st_mode)) {
 			// рекурсивно вызываем функцию, передаем относительный путь: например, ./d1/
-			listfiles(path, names);	
+			listfiles(hash, path, names);	
 		}	
 	}
 

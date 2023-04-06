@@ -3,10 +3,8 @@
 #include <string.h>
 #include "listfilesnotbufreq.h"
 
-static struct Hash *hash;
-
 // по ключу (строке) получаем число (индекс в буфере)
-unsigned hashfunc(char *s) {
+unsigned hashfunc(struct Hash *hash, char *s) {
 	unsigned hashvalue;
 	for (hashvalue = 0; *s != '\0'; s++) {
 		hashvalue = *s + 31 * hashvalue;
@@ -14,10 +12,10 @@ unsigned hashfunc(char *s) {
 	return hashvalue % hash->size_hashtab;
 }
 
-int findhash(char *key, struct Block **hashtab) {
+int findhash(struct Hash *hash, char *key) {
 	struct Block *p;
 	// в указатель на структуру получаем адрес структуры из хэша или NULL
-	for (p = hashtab[hashfunc(key)]; p != NULL; p = p->p) {
+	for (p = hash->hashtab[hashfunc(hash, key)]; p != NULL; p = p->p) {
 		// если структура есть, проверяем соответствие ключей: ключи не равны ? идем дальше по связанному списку : возвращаем 1
 		if (strcmp(p->key, key) == 0) {
 			return p->value;
@@ -28,36 +26,41 @@ int findhash(char *key, struct Block **hashtab) {
 	return 0;
 }
 
-int addhash(char *key, struct Hash **phash) {
+// дает возможность создать много хэшей
+struct Hash *createhash(int size) {
 
-	hash = *phash;
-	
+	// выделяем память под структуру хэша
+	struct Hash *hash = (struct Hash *) malloc(sizeof(struct Hash));
 	if (hash == NULL) {
-		if ((hash = (struct Hash *) malloc(sizeof(struct Hash))) == NULL) {
-			perror("malloc");
-			return -1;
-		}
-
-		hash->size_hashtab = 10;
-		hash->count_struct = 0;
-
-		
-		if ((hash->hashtab = (struct Block **) malloc(sizeof(struct Block *) * hash->size_hashtab)) == NULL) {
-			perror("malloc");
-			return -1;
-		}
+		perror("malloc");
+		return NULL;
 	}
 
-	if (hash->count_struct == hash->size_hashtab) {
-		hash->size_hashtab *= 2;
-		if ((hash->hashtab = (struct Block **) realloc(hash->hashtab, sizeof(struct Block *) * hash->size_hashtab)) == NULL) {
-			perror("realloc");
-			return -1;
-		}
+	// выделяем память под массив структур
+	if ((hash->hashtab = (struct Block **) malloc(sizeof(struct Block *) * size)) == NULL) {
+		free(hash);
+		perror("malloc");
+		return NULL;
 	}
+
+	hash->size_hashtab = size;
+	hash->count_struct = 0;
+
+	return hash;
+} 
+
+int addhash(struct Hash *hash, char *key) {
+	
+	// if (hash->count_struct == hash->size_hashtab) {
+		// hash->size_hashtab *= 2;
+		// if ((hash->hashtab = (struct Block **) realloc(hash->hashtab, sizeof(struct Block *) * hash->size_hashtab)) == NULL) {
+			// perror("realloc");
+			// return -1;
+		// }
+	// }
 	
 	// проверяем наличие в хэше структуры по ключу
-	if (findhash(key, hash->hashtab)) {
+	if (findhash(hash, key)) {
 		// в хэше уже есть структура по данному ключу
 		return 1;
 	}
@@ -69,7 +72,8 @@ int addhash(char *key, struct Hash **phash) {
 		perror("malloc");
 		return -1;
 	}
-	
+
+	// инкрементируем счетчик структур
 	hash->count_struct++;
 
 	// выделяем память под ключ (строку)
@@ -83,12 +87,9 @@ int addhash(char *key, struct Hash **phash) {
 	// записываем значение в структуре
 	p->value = 1;
 	// записываем указатель на предыдущую структуру, записанную по этому индексу в массив или NULL, если это первая запись 
-	p->p = hash->hashtab[hashfunc(key)];
+	p->p = hash->hashtab[hashfunc(hash, key)];
 	// записываем указатель на эту структуру в хэш по данному индексу
-	hash->hashtab[hashfunc(key)] = p;
-
-
-	*phash = hash;
+	hash->hashtab[hashfunc(hash, key)] = p;
 	
 	return 0;
 }
