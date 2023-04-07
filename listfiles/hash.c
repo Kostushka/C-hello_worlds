@@ -14,6 +14,7 @@ unsigned hashfunc(struct Hash *hash, char *s) {
 
 int findhash(struct Hash *hash, char *key) {
 	struct Block *p;
+	
 	// в указатель на структуру получаем адрес структуры из хэша или NULL
 	for (p = hash->hashtab[hashfunc(hash, key)]; p != NULL; p = p->p) {
 		// если структура есть, проверяем соответствие ключей: ключи не равны ? идем дальше по связанному списку : возвращаем 1
@@ -42,23 +43,29 @@ struct Hash *createhash(int size) {
 		perror("malloc");
 		return NULL;
 	}
+	// инициализирую элементы буфера структур NULL
+	for (int i = 0; i < size; i++) {
+		hash->hashtab[i] = NULL;
+	}
 
 	hash->size_hashtab = size;
 	hash->count_struct = 0;
+	hash->count_fillel = 0;
 
 	return hash;
 } 
 
 int addhash(struct Hash *hash, char *key) {
-	
-	// if (hash->count_struct == hash->size_hashtab) {
+
+	// перевыделяем память, если соотношение заполненных элементов массива к общему кол-ву элементов массива >= 0.7
+	// if (((double) hash->count_fillel / hash->size_hashtab) >= 0.7) {
 		// hash->size_hashtab *= 2;
 		// if ((hash->hashtab = (struct Block **) realloc(hash->hashtab, sizeof(struct Block *) * hash->size_hashtab)) == NULL) {
 			// perror("realloc");
 			// return -1;
 		// }
 	// }
-	
+
 	// проверяем наличие в хэше структуры по ключу
 	if (findhash(hash, key)) {
 		// в хэше уже есть структура по данному ключу
@@ -88,6 +95,10 @@ int addhash(struct Hash *hash, char *key) {
 	p->value = 1;
 	// записываем указатель на предыдущую структуру, записанную по этому индексу в массив или NULL, если это первая запись 
 	p->p = hash->hashtab[hashfunc(hash, key)];
+	// считаем кол-во заполненных элементов массива
+	if (p->p == NULL) {
+		++hash->count_fillel;
+	}
 	// записываем указатель на эту структуру в хэш по данному индексу
 	hash->hashtab[hashfunc(hash, key)] = p;
 	

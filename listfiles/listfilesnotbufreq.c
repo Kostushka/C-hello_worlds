@@ -32,6 +32,7 @@ void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
 int listfiles(struct Hash *hash, char *dirname, struct Names *names);
 char *getCorrectPath(char *s);
+void freeHashStruct(struct Hash *hash);
 
 int main(int argc, char **argv) {
 
@@ -117,10 +118,12 @@ int main(int argc, char **argv) {
 		printf("%s\n", names.items[i]);
 		free(names.items[i]);
 	}
-
+	
+	freeHashStruct(hash);
+	free(hash->hashtab);
 	free(hash);
 	free(names.items);
-	
+		
 	/*
 	// исключаю дубликаты отсортированных указателей на имена при выводе
 	// вывожу имена из буфера: прохожусь по всем именам кроме последнего
@@ -145,6 +148,30 @@ int main(int argc, char **argv) {
 	*/
 	
 	return 0;
+}
+
+void freeHashStruct(struct Hash *hash) {
+	// проходимся по всем элементам массива структур
+	for (int i = 0; i < SIZE; i++) {
+		// если по индексу нет структур
+	    if (hash->hashtab[i] == NULL) {
+	    	continue;
+	    }
+	    // если по индексу одна структура
+	    if (hash->hashtab[i]->p == NULL) {
+	    	free(hash->hashtab[i]->key);
+	    	free(hash->hashtab[i]);
+	    	continue;
+	    }
+	    // если по индексу структура содержит указатель на другую структуру (связанный список)
+	    struct Block *p = hash->hashtab[i];
+	    while (p != NULL) {
+	    	struct Block *temp = p;
+	    	p = p->p;
+	    	free(temp->key);
+	    	free(temp);
+	    }
+	}
 }
 
 char *getCorrectPath(char *s) {
