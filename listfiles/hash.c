@@ -44,9 +44,7 @@ struct Hash *createhash(int size) {
 		return NULL;
 	}
 	// инициализирую элементы буфера структур NULL
-	for (int i = 0; i < size; i++) {
-		hash->hashtab[i] = NULL;
-	}
+	memset(hash->hashtab, 0, size * sizeof(struct Block *));
 
 	hash->size_hashtab = size;
 	hash->count_struct = 0;
