@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include "listfilesnotbufreq.h"
 
-int includePath(char *curr, char *check);
+int include_path(char *curr, char *check);
 
-int getNotDuplPaths(char **argv, int len, char ***paths) {
+int get_not_duplpaths(char **argv, int len, char ***paths) {
 
 	// локальный массив нужных путей
 	char **well_paths;
@@ -43,7 +43,7 @@ int getNotDuplPaths(char **argv, int len, char ***paths) {
 				continue;
 			}
 			// если curr является префиксом check или пути соответсвуют друг другу
-			if (includePath(argv[i], argv[j])) {
+			if (include_path(argv[i], argv[j])) {
 				// заменяем check на NULL - то есть исключаем этот путь
 				argv[j] = NULL;
 				// инкрементируем счетчик NULL
@@ -77,7 +77,7 @@ int getNotDuplPaths(char **argv, int len, char ***paths) {
 // /home
 // /home12
 
-int includePath(char *curr, char *check) {
+int include_path(char *curr, char *check) {
 	// доходим до конца curr или до несовпадения curr и check
 	while (*curr == *check && *curr != '\0') {
 		++curr;

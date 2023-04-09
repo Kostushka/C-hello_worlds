@@ -31,13 +31,14 @@ int mystrcmp(char *s, char *t);
 void myqsort(char *s[], int start, int end);
 void swap(char *s[], int i, int j);
 int listfiles(struct Hash *hash, char *dirname, struct Names *names);
-char *getCorrectPath(char *s);
-void freeHashStruct(struct Hash *hash);
+char *get_correct_path(char *s);
+void free_hash_struct(struct Hash *hash);
+void hash_destroy(struct Hash *hash);
 
 int main(int argc, char **argv) {
 
 	// создаю хэш и записываю указатель на него
-	struct Hash *hash = createhash(SIZE);
+	struct Hash *hash = create_hash(SIZE);
 	if (hash == NULL) {
 		return -1;
 	}
@@ -59,7 +60,7 @@ int main(int argc, char **argv) {
 	int length;
 	// если есть аргументы
 	if (argc > 1) {
-		length = getNotDuplPaths(argv + 1, argc - 1, &paths);
+		length = get_not_duplpaths(argv + 1, argc - 1, &paths);
 	}
 	*/
 
@@ -101,7 +102,7 @@ int main(int argc, char **argv) {
 
 	for (int i = 0; i < argcopy; i++) {
 		// из каждого аргумента формируем корректный путь (без /, если он есть)
-		char *correctpath = getCorrectPath(argvp[i]);
+		char *correctpath = get_correct_path(argvp[i]);
 		pathname = correctpath;
 	
 		// записываем в буфер структуры рекурсивно все указатели на имена файлов, полученные по переданным путям
@@ -119,9 +120,7 @@ int main(int argc, char **argv) {
 		free(names.items[i]);
 	}
 	
-	freeHashStruct(hash);
-	free(hash->hashtab);
-	free(hash);
+	hash_destroy(hash);
 	free(names.items);
 		
 	/*
@@ -150,20 +149,21 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void freeHashStruct(struct Hash *hash) {
+void hash_destroy(struct Hash *hash) {
+	free_hash_struct(hash);
+	free(hash->hashtab);
+	free(hash);
+}
+
+void free_hash_struct(struct Hash *hash) {
 	// проходимся по всем элементам массива структур
-	for (int i = 0; i < SIZE; i++) {
+	for (int i = 0; i < hash->size_hashtab; i++) {
 		// если по индексу нет структур
 	    if (hash->hashtab[i] == NULL) {
 	    	continue;
 	    }
-	    // если по индексу одна структура
-	    if (hash->hashtab[i]->p == NULL) {
-	    	free(hash->hashtab[i]->key);
-	    	free(hash->hashtab[i]);
-	    	continue;
-	    }
-	    // если по индексу структура содержит указатель на другую структуру (связанный список)
+	    
+	    // если по индексу одна структура или структура содержит указатель на другую структуру (связанный список)
 	    struct Block *p = hash->hashtab[i];
 	    while (p != NULL) {
 	    	struct Block *temp = p;
@@ -174,7 +174,7 @@ void freeHashStruct(struct Hash *hash) {
 	}
 }
 
-char *getCorrectPath(char *s) {
+char *get_correct_path(char *s) {
 
 	char *t = s;
 	
@@ -244,7 +244,7 @@ int listfiles(struct Hash *hash, char *dirname, struct Names *names) {
 		// }
 
 		// если путь уже есть в хэше, то пропускаем работу с этим путем
-		if (addhash(hash, path) == 1) {
+		if (add_hash(hash, path) == 1) {
 			continue;
 		}
 

@@ -12,7 +12,7 @@ unsigned hashfunc(struct Hash *hash, char *s) {
 	return hashvalue % hash->size_hashtab;
 }
 
-int findhash(struct Hash *hash, char *key) {
+int find_hash(struct Hash *hash, char *key) {
 	struct Block *p;
 	
 	// в указатель на структуру получаем адрес структуры из хэша или NULL
@@ -28,35 +28,31 @@ int findhash(struct Hash *hash, char *key) {
 }
 
 // дает возможность создать много хэшей
-struct Hash *createhash(int size) {
+struct Hash *create_hash(int size) {
 
 	// выделяем память под структуру хэша
-	struct Hash *hash = (struct Hash *) malloc(sizeof(struct Hash));
+	struct Hash *hash = (struct Hash *) calloc(1, sizeof(struct Hash));
 	if (hash == NULL) {
-		perror("malloc");
+		perror("calloc");
 		return NULL;
 	}
 
 	// выделяем память под массив структур
-	if ((hash->hashtab = (struct Block **) malloc(sizeof(struct Block *) * size)) == NULL) {
+	if ((hash->hashtab = (struct Block **) calloc(1, sizeof(struct Block *) * size)) == NULL) {
 		free(hash);
 		perror("malloc");
 		return NULL;
 	}
-	// инициализирую элементы буфера структур NULL
-	memset(hash->hashtab, 0, size * sizeof(struct Block *));
 
 	hash->size_hashtab = size;
-	hash->count_struct = 0;
-	hash->count_fillel = 0;
 
 	return hash;
 } 
 
-int addhash(struct Hash *hash, char *key) {
+int add_hash(struct Hash *hash, char *key) {
 
 	// перевыделяем память, если соотношение заполненных элементов массива к общему кол-ву элементов массива >= 0.7
-	// if (((double) hash->count_fillel / hash->size_hashtab) >= 0.7) {
+	// if (((double) hash->count_fill_el / hash->size_hashtab) >= 0.7) {
 		// hash->size_hashtab *= 2;
 		// if ((hash->hashtab = (struct Block **) realloc(hash->hashtab, sizeof(struct Block *) * hash->size_hashtab)) == NULL) {
 			// perror("realloc");
@@ -65,7 +61,7 @@ int addhash(struct Hash *hash, char *key) {
 	// }
 
 	// проверяем наличие в хэше структуры по ключу
-	if (findhash(hash, key)) {
+	if (find_hash(hash, key)) {
 		// в хэше уже есть структура по данному ключу
 		return 1;
 	}
@@ -81,21 +77,21 @@ int addhash(struct Hash *hash, char *key) {
 	// инкрементируем счетчик структур
 	hash->count_struct++;
 
-	// выделяем память под ключ (строку)
-	if ((p->key = (char *) malloc(strlen(key) + 1)) == NULL) {
-		perror("malloc");
+	// создаем дубликат строки ключа и записываем его в структуре
+	p->key = strdup(key);
+	
+	if (p->key == NULL) {
+		perror("strdup");
 		return -1;
 	}
-	
-	// записываем ключ в структуре
-	strcpy(p->key, key);
+
 	// записываем значение в структуре
 	p->value = 1;
 	// записываем указатель на предыдущую структуру, записанную по этому индексу в массив или NULL, если это первая запись 
 	p->p = hash->hashtab[hashfunc(hash, key)];
 	// считаем кол-во заполненных элементов массива
 	if (p->p == NULL) {
-		++hash->count_fillel;
+		++hash->count_fill_el;
 	}
 	// записываем указатель на эту структуру в хэш по данному индексу
 	hash->hashtab[hashfunc(hash, key)] = p;
