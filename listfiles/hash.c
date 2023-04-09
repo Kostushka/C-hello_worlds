@@ -40,7 +40,7 @@ struct Hash *create_hash(int size) {
 	// выделяем память под массив структур
 	if ((hash->hashtab = (struct Block **) calloc(1, sizeof(struct Block *) * size)) == NULL) {
 		free(hash);
-		perror("malloc");
+		perror("calloc");
 		return NULL;
 	}
 
