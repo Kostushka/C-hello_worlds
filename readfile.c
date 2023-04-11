@@ -6,9 +6,6 @@
 
 int read_file_to_fd(char *filename, int file_fd, int fd);
 
-// буфер для считываемых символов
-char buf[BUFSIZ];
-
 int main(int argc, char *argv[]) {
 	int file_fd, bytes;
 	int res = 0;
@@ -28,27 +25,34 @@ int main(int argc, char *argv[]) {
 			close(file_fd);
 		}
 	}
-	printf("read %d bytes\n", res);
+	printf("read and write %d bytes\n", res);
 
 	return 0;
 }
 
 int read_file_to_fd(char *filename, int file_fd, int fd) {
 	int n, w;
-
+	int sum = 0;
+	
+	// буфер для считываемых символов
+	char buf[BUFSIZ];
+	
 	// читаем файл в буфер
-	n = read(file_fd, buf, BUFSIZ);
-	if (n == -1) {
-		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
-		return -1;
+	while ((n = read(file_fd, buf, BUFSIZ)) != 0) {
+		if (n == -1) {
+			fprintf(stderr, "%s: %s\n", filename, strerror(errno));
+			return -1;
+		}	
+
+		w = write(fd, buf, n);
+		
+		if (w == -1) {
+			fprintf(stderr, "%s: %s\n", filename, strerror(errno));
+			return -1;
+		}
+		
+		sum += w;		
 	}
 
-	// записываем в fd прочитанные байты
-	w = write(fd, buf, n);
-	if (w == -1) {
-		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
-		return -1;
-	}
-
-	return w;
+	return sum;
 }
