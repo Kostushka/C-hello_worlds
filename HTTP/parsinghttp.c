@@ -31,6 +31,9 @@ void readreq(int fd, struct Http_request *http);
 
 char *read_line(int fd);
 
+void parsing_req(char *s, struct Http_request *http);
+void parsing_head(char *s, struct Http_request *http);
+
 int main(int argc, char *argv[]) {
 
 	struct Http_request *http;
@@ -56,59 +59,34 @@ void readreq(int fd, struct Http_request *http) {
 
 	// получаем строку запроса в преобразованном виде
 	char *reqline = read_line(fd);
-
-	// индекс для передачи адреса начала нужного слова
-	int start = 0;
-
-	// записываем метод
-	http->method = &reqline[start];
-		
-	while (reqline[start] != '\0') {
-		++start;
+	if (reqline == NULL) {
+		return;
 	}
 
-	// записываем url
-	http->resource = &reqline[++start];
-
-	
-	while (reqline[start] != '\0') {
-		++start;
-	}
-
-	// записываем версию протокола
-	http->protocol_version = &reqline[++start];
-
-	printf("method: %s\nresource: %s\nver: %s\n", http->method, http->resource, http->protocol_version);
+	parsing_req(reqline, http);
 
 	// создаем хэш для строк заголовков
-	http->headers = create_hash(SIZE);
+	http->headers = hash_create(SIZE);
+	if (http->headers == NULL) {
+		return;
+	}
 
 	// строка заголовка
 	char *headline;
 
 	do {
-		int start = 0;
-
 		// получаем строку заголовка
 		headline = read_line(fd);
+		if (headline == NULL) {
+			return;
+		}
 
 		// если пустая строка - выходим из цикла
 		if (headline[0] == '\0') {
 			break;
 		}
 
-		// получаем строку ключа
-		char *key = &headline[start];
-		
-		while (headline[start] != '\0') {
-			++start;
-		}
-
-		// получаем строку значения
-		char *value = &headline[++start];
-
-		// добавляем строку заголовка в хэш
-		add_hash(http->headers, key, value);
+		parsing_head(headline, http);
 				
 	} while (1);
 
@@ -130,8 +108,8 @@ char *read_line(int fd) {
 	// буфер для посимвольного чтения файла 
 	char c;
 	
-	int n, size, count;
-	size = 5;
+	int size, count;
+	size = 128;
 	count = 0;
 
 	// выделяем память под строку файла
@@ -139,7 +117,7 @@ char *read_line(int fd) {
 	strp = (char *) calloc(size, sizeof(char));
 	if (strp == NULL) {
 		perror("calloc");
-		exit(1);
+		return NULL;
 	}
 
 	do {
@@ -149,15 +127,14 @@ char *read_line(int fd) {
 			strp = (char *) realloc(strp, size * sizeof(char));
 			if (strp == NULL) {
 				perror("realloc");
-				exit(1);
+				return NULL;
 			}
 		}
 
 		// читаем один символ файла
-		n = read(fd, &c, 1);
-		if (n == -1) {
+		if (read(fd, &c, 1) == -1) {
 			perror("read");
-			exit(1);
+			return NULL;
 		}
 
 		if (c != '\n') {
@@ -166,20 +143,73 @@ char *read_line(int fd) {
 		} else {
 			// заменяем \n на символ конца строки
 			strp[count++] = '\0';
-			// проходимся по всей строке и заменяем ' ' на символ конца строки - для последующего извлечения из строки слов
-			// GET / HTTP/1.1\n -> GET\0/\0HTTP/1.1\0
-			for (int i = 0; i < count; i++) {				
-				if (strp[i] == ' ') {				
-					strp[i] = '\0';
-					// если анализируем поле заголовка, то заменять символом конца строки все ' ' не нужно
-					if (strp[i - 1] == ':') {
-						break;
-					}
-				}
-			}
 		}
 		
 	} while (c != '\n');
 		
 	return strp;
+}
+
+void parsing_req(char *s, struct Http_request *http) {
+
+	int len = strlen(s);
+	
+	// проходимся по всей строке и заменяем ' ' на символ конца строки - для последующего извлечения из строки слов
+	// GET / HTTP/1.1\n -> GET\0/\0HTTP/1.1\0
+	for (int i = 0; i < len; i++) {		
+		if (s[i] == ' ') {	
+			s[i] = '\0';
+		}
+	}
+
+	// индекс для передачи адреса начала нужного слова
+	int start = 0;
+
+	// записываем метод
+	http->method = &s[start];
+		
+	while (s[start] != '\0') {
+		++start;
+	}
+
+	// записываем url
+	http->resource = &s[++start];
+
+	while (s[start] != '\0') {
+		++start;
+	}
+
+	// записываем версию протокола
+	http->protocol_version = &s[++start];
+
+	printf("method: %s\nresource: %s\nver: %s\n", http->method, http->resource, http->protocol_version);
+	
+}
+
+void parsing_head(char *s, struct Http_request *http) {
+	for (int i = 0; i < (int) strlen(s); i++) {	
+		// если встречаем комбинацию ': ', то заменяем ее на ':\0' - это разделитель между key и value заголовка
+		// connection: close -> connection:\0close
+		if (s[i] == ':' && s[i + 1] == ' ') {				
+			s[i + 1] = '\0';
+			break;
+		}
+	}
+
+	int start = 0;
+
+	// получаем строку ключа
+	char *key = &s[start];
+	
+	while (s[start] != '\0') {
+		++start;
+	}
+
+	// получаем строку значения
+	char *value = &s[++start];
+
+	// добавляем строку заголовка в хэш
+	if (hash_add(http->headers, key, value) == NULL) {
+		return;
+	}
 }

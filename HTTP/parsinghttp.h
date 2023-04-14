@@ -11,7 +11,7 @@ struct Hash {
 	int size_hashtab;
 };
 
-struct Hash *create_hash(int size);
-unsigned hashfunc(struct Hash *hash, char *key);
-struct Block *find_hash(struct Hash *hash, char *key);
-char *add_hash(struct Hash *hash, char *key, char *value);
+struct Hash *hash_create(int size);
+unsigned hash_func(struct Hash *hash, char *key);
+char *hash_find(struct Hash *hash, char *key);
+char *hash_add(struct Hash *hash, char *key, char *value);

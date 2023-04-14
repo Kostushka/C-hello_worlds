@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "parsinghttp.h"
 
-unsigned hashfunc(struct Hash *hash, char *key) {
+unsigned hash_func(struct Hash *hash, char *key) {
 	unsigned hashvalue;
 	for (hashvalue = 0; *key != '\0'; key++) {
 		hashvalue = *key + 31 * hashvalue;
@@ -11,29 +11,29 @@ unsigned hashfunc(struct Hash *hash, char *key) {
 	return hashvalue % hash->size_hashtab;
 }
 
-struct Block *find_hash(struct Hash *hash, char *key) {
+char *hash_find(struct Hash *hash, char *key) {
 	struct Block *p;
-	for (p = hash->hashtab[hashfunc(hash, key)]; p != NULL; p = p->p) {
+	for (p = hash->hashtab[hash_func(hash, key)]; p != NULL; p = p->p) {
 		if (strcmp(p->key, key) == 0) {
-			return p;
+			return p->value;
 		}
 	}
 	return NULL;
 }
 
-struct Hash *create_hash(int size) {
+struct Hash *hash_create(int size) {
 
 	struct Hash *hash = (struct Hash *) calloc(1, sizeof(struct Hash));
 	if (hash == NULL) {
 		perror("calloc");
-		exit(1);
+		return NULL;
 	}
 
 	hash->hashtab = (struct Block **) calloc(1, sizeof(struct Block *) * size);
 	if (hash->hashtab == NULL) {
 		free(hash);
 		perror("calloc");
-		exit(1);
+		return NULL;
 	}
 
 	hash->size_hashtab = size;
@@ -41,31 +41,37 @@ struct Hash *create_hash(int size) {
 	return hash;
 }
 
-char *add_hash(struct Hash *hash, char *key, char *value) {
-	struct Block *findp;
-	if ((findp = find_hash(hash, key)) != NULL) {
-		return findp->value;
+char *hash_add(struct Hash *hash, char *key, char *value) {
+	char *pvalue;
+	if ((pvalue = hash_find(hash, key)) != NULL) {
+		free(pvalue);
+		pvalue = strdup(value);
+		if (pvalue == NULL) {
+			perror("strdup");
+			return NULL;
+		}
+		return pvalue;
 	}
 	
 	struct Block *p;
 	p = (struct Block *) malloc(sizeof(struct Block));
 	if (p == NULL) {
 		perror("malloc");
-		exit(1);
+		return NULL;
 	}
 
 	p->key = strdup(key);
 	if (p->key == NULL) {
 		perror("strdup");
-		exit(1);
+		return NULL;
 	}
 	p->value = strdup(value);
 	if (p->value == NULL) {
 		perror("strdup");
-		exit(1);
+		return NULL;
 	}
-	p->p = hash->hashtab[hashfunc(hash, key)];
-	hash->hashtab[hashfunc(hash, key)] = p;
+	p->p = hash->hashtab[hash_func(hash, key)];
+	hash->hashtab[hash_func(hash, key)] = p;
 	
 	return p->value;
 
