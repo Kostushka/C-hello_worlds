@@ -11,11 +11,11 @@ unsigned hash_func(struct Hash *hash, char *key) {
 	return hashvalue % hash->size_hashtab;
 }
 
-char *hash_find(struct Hash *hash, char *key) {
+struct Block *hash_find(struct Hash *hash, char *key) {
 	struct Block *p;
 	for (p = hash->hashtab[hash_func(hash, key)]; p != NULL; p = p->p) {
 		if (strcmp(p->key, key) == 0) {
-			return p->value;
+			return p;
 		}
 	}
 	return NULL;
@@ -42,15 +42,15 @@ struct Hash *hash_create(int size) {
 }
 
 char *hash_add(struct Hash *hash, char *key, char *value) {
-	char *pvalue;
-	if ((pvalue = hash_find(hash, key)) != NULL) {
-		free(pvalue);
-		pvalue = strdup(value);
-		if (pvalue == NULL) {
+	struct Block *findp;
+	if ((findp = hash_find(hash, key)) != NULL) {
+		free(findp->value);
+		findp->value = strdup(value);
+		if (findp->value == NULL) {
 			perror("strdup");
 			return NULL;
 		}
-		return pvalue;
+		return findp->value;
 	}
 	
 	struct Block *p;
@@ -75,4 +75,12 @@ char *hash_add(struct Hash *hash, char *key, char *value) {
 	
 	return p->value;
 
+}
+
+char *hash_get(struct Hash *hash, char *key) {
+	struct Block *p;
+	if ((p = hash_find(hash, key)) != NULL) {
+		return p->value;
+	}
+	return NULL;
 }

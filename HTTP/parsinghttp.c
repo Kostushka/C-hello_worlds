@@ -71,6 +71,23 @@ void readreq(int fd, struct Http_request *http) {
 		return;
 	}
 
+	struct Hash *hash = hash_create(10);
+	hash_add(hash, "cat", "Vasy");
+	printf("Name: %s\n", hash_get(hash, "cat"));
+	hash_add(hash, "cat", "Georg");
+	printf("Name2: %s\n", hash_get(hash, "cat"));
+	for (int i = 0; i < 10; i++) {
+		if (hash->hashtab[i] == NULL) {
+			continue;
+		}
+		struct Block *p = hash->hashtab[i];
+		while (p != NULL) {
+			printf("%s %s\n", p->key, p->value);
+			p = p->p;
+		}
+	}
+	
+
 	// строка заголовка
 	char *headline;
 

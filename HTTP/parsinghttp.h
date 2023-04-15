@@ -13,5 +13,6 @@ struct Hash {
 
 struct Hash *hash_create(int size);
 unsigned hash_func(struct Hash *hash, char *key);
-char *hash_find(struct Hash *hash, char *key);
+struct Block *hash_find(struct Hash *hash, char *key);
 char *hash_add(struct Hash *hash, char *key, char *value);
+char *hash_get(struct Hash *hash, char *key);
