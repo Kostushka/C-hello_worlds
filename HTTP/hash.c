@@ -84,3 +84,55 @@ char *hash_get(struct Hash *hash, char *key) {
 	}
 	return NULL;
 }
+
+char **hash_keys(struct Hash *hash) {
+	char **keystab;
+	int index_keystab = 0;
+	int size_keystab = 5;
+	
+	keystab = (char **) calloc(1, sizeof(char *) * size_keystab);
+	if (keystab == NULL) {
+		perror("calloc");
+		return NULL;
+	}
+
+	for (int i = 0; i < hash->size_hashtab; i++) {		
+		if (hash->hashtab[i] == NULL) {
+			continue;
+		}
+
+		struct Block *p = hash->hashtab[i];
+		while (p != NULL) {
+			if (index_keystab == size_keystab - 1) {
+				size_keystab *= 2;
+				keystab = (char **) realloc(keystab, sizeof(char *) * size_keystab);
+				if (keystab == NULL) {
+					perror("realloc");
+					return NULL;
+				}
+			}
+			keystab[index_keystab++] = p->key;
+			keystab[index_keystab] = "\0";
+			p = p->p;
+		}
+	}
+	return keystab;
+}
+
+void hash_delete(struct Hash *hash) {
+	for (int i = 0; i < hash->size_hashtab; i++) {
+		if (hash->hashtab[i] == NULL) {
+			continue;
+		}
+		struct Block *p = hash->hashtab[i];
+		while (p != NULL) {
+			struct Block *temp = p;
+			p = p->p;
+			free(temp->key);
+			free(temp->value);
+			free(temp);
+		}
+	}
+	free(hash->hashtab);
+	free(hash);
+}

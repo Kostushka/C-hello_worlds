@@ -69,24 +69,7 @@ void readreq(int fd, struct Http_request *http) {
 	http->headers = hash_create(SIZE);
 	if (http->headers == NULL) {
 		return;
-	}
-
-	struct Hash *hash = hash_create(10);
-	hash_add(hash, "cat", "Vasy");
-	printf("Name: %s\n", hash_get(hash, "cat"));
-	hash_add(hash, "cat", "Georg");
-	printf("Name2: %s\n", hash_get(hash, "cat"));
-	for (int i = 0; i < 10; i++) {
-		if (hash->hashtab[i] == NULL) {
-			continue;
-		}
-		struct Block *p = hash->hashtab[i];
-		while (p != NULL) {
-			printf("%s %s\n", p->key, p->value);
-			p = p->p;
-		}
-	}
-	
+	}	
 
 	// строка заголовка
 	char *headline;
@@ -100,24 +83,36 @@ void readreq(int fd, struct Http_request *http) {
 
 		// если пустая строка - выходим из цикла
 		if (headline[0] == '\0') {
+			free(headline);
 			break;
 		}
 
 		parsing_head(headline, http);
+		free(headline);
+
 				
 	} while (1);
 
-	// выводим содержимое хэша
-	for (int i = 0; i < http->headers->size_hashtab; i++) {
-		if (http->headers->hashtab[i] == NULL) {
-			continue;
-		}
-		struct Block *p = http->headers->hashtab[i];
-		while (p != NULL) {
-			printf("%s %s\n", p->key, p->value);
-			p = p->p;
-		}
+	char *host_value;
+	
+	if ((host_value = hash_get(http->headers, "host:")) != NULL) {
+		printf("Host: %s\n", host_value);
 	}
+
+	// получаю и вывожу все ключи и значения по ключам
+	char **keys = hash_keys(http->headers);
+	if (keys == NULL) {
+		return;
+	}
+	for (int i = 0; strcmp(keys[i], "\0") != 0; i++) {
+		char *value = hash_get(http->headers, keys[i]);
+		printf("%s %s\n", keys[i], value);
+	}
+
+	free(keys);
+	free(reqline);
+	hash_delete(http->headers);
+	free(http);
 }
 
 char *read_line(int fd) {

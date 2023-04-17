@@ -16,3 +16,5 @@ unsigned hash_func(struct Hash *hash, char *key);
 struct Block *hash_find(struct Hash *hash, char *key);
 char *hash_add(struct Hash *hash, char *key, char *value);
 char *hash_get(struct Hash *hash, char *key);
+char **hash_keys(struct Hash *hash);
+void hash_delete(struct Hash *hash);
