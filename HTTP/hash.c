@@ -13,7 +13,7 @@ unsigned hash_func(struct Hash *hash, char *key) {
 
 struct Block *hash_find(struct Hash *hash, char *key) {
 	struct Block *p;
-	for (p = hash->hashtab[hash_func(hash, key)]; p != NULL; p = p->p) {
+	for (p = hash->hashtab[hash_func(hash, key)]; p != NULL; p = p->next) {
 		if (strcmp(p->key, key) == 0) {
 			return p;
 		}
@@ -70,7 +70,7 @@ char *hash_add(struct Hash *hash, char *key, char *value) {
 		perror("strdup");
 		return NULL;
 	}
-	p->p = hash->hashtab[hash_func(hash, key)];
+	p->next = hash->hashtab[hash_func(hash, key)];
 	hash->hashtab[hash_func(hash, key)] = p;
 	
 	return p->value;
@@ -112,10 +112,12 @@ char **hash_keys(struct Hash *hash) {
 				}
 			}
 			keystab[index_keystab++] = p->key;
-			keystab[index_keystab] = "\0";
-			p = p->p;
+			p = p->next;
 		}
 	}
+	
+	keystab[index_keystab] = NULL;
+
 	return keystab;
 }
 
@@ -126,11 +128,11 @@ void hash_delete(struct Hash *hash) {
 		}
 		struct Block *p = hash->hashtab[i];
 		while (p != NULL) {
-			struct Block *temp = p;
-			p = p->p;
-			free(temp->key);
-			free(temp->value);
-			free(temp);
+			struct Block *next = p->next;
+			free(p->key);
+			free(p->value);
+			free(p);
+			p = next;
 		}
 	}
 	free(hash->hashtab);

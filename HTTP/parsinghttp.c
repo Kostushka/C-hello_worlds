@@ -104,7 +104,7 @@ void readreq(int fd, struct Http_request *http) {
 	if (keys == NULL) {
 		return;
 	}
-	for (int i = 0; strcmp(keys[i], "\0") != 0; i++) {
+	for (int i = 0; keys[i]; i++) {
 		char *value = hash_get(http->headers, keys[i]);
 		printf("%s %s\n", keys[i], value);
 	}

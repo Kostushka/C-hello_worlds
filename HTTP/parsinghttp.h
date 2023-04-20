@@ -2,7 +2,7 @@
 struct Block {
 	char *key;
 	char *value;
-	struct Block *p;
+	struct Block *next;
 };
 
 // структура хэша
