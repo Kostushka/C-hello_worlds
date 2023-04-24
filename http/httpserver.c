@@ -64,32 +64,24 @@ int main(void) {
 	}
 
 	int sockfd_client;
-	
-	time_t ticks;
-	char buf[1024];
-	memset(buf, 0, sizeof(buf));
+
+	char buf[BUFSIZ];
 
 	while (1) {
-		printf("waiting client\n");
 		// принятие запроса на установление соединения, создание нового сокета для каждого соединения (конкретного клиента)
 		sockfd_client = accept(sockfd, (struct sockaddr *) NULL, NULL);
 		if (sockfd_client == -1) {
 			perror("accept");
 			return -1;
 		}
-		printf("client accepted, press enter to continue\n");
-		getchar();
 
-		// получаем дату, время, выводим их
-		ticks = time(NULL);
-		snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&ticks));
-
-		// записываем дату, время в сокет
-		write(sockfd_client, buf, strlen(buf));
-		
+		// читаю в буфер из клиентского сокета запрос
+		read(sockfd_client, buf, BUFSIZ);
+		// пишу в stdout из буфера запрос
+		write(1, buf, BUFSIZ);
+	
 		// закрываем файл сокета для клиента
 		close(sockfd_client);
-		printf("connection closed\n");
 	}
 
 	return 0;

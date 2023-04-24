@@ -2,7 +2,9 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <errno.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -12,7 +14,12 @@
 // uint32_t htonl(uint32_t hostlong);
 // uint16_t htons(uint16_t hostshort);
 
-int main(void) {
+int main(int argc, char *argv[]) {
+
+	if (argc != 2) {
+		printf("invalid value for request\n");
+		return -1;
+	}
 
 	// структура с данными сервера
 	// struct sockaddr_in {
@@ -23,17 +30,17 @@ int main(void) {
 	   //                                  INADDR_ANY - все адреса локального хоста (0.0.0.0);
 	   // unsigned char        sin_zero[8];
 	// };
-	struct sockaddr_in klient;
+	struct sockaddr_in server;
 
 	// заполнить все поля структуры нулями
-	memset(&klient, '0', sizeof(klient));
+	memset(&server, 0, sizeof(server));
 
 	// протокол
-	klient.sin_family = AF_INET;
+	server.sin_family = AF_INET;
 	// порт
-	klient.sin_port = htons(5000);
+	server.sin_port = htons(5000);
 	// IP адрес
-	klient.sin_addr.s_addr = inet_addr("127.0.0.1");
+	server.sin_addr.s_addr = inet_addr("127.0.0.1");
 
 	// файловый дескриптор сокета
 	int sockfd;
@@ -45,29 +52,33 @@ int main(void) {
 		return -1;
 	}
 
-	// устанавливаем соединение с сервером
-	if ((connect(sockfd, (struct sockaddr *) &klient, sizeof(klient))) == -1) {
-		perror("connect");
-		return -1;
-	}
-
-	char buf[1024];
-	memset(buf, '0', sizeof(buf));
+	char buf[BUFSIZ];
+	memset(buf, 0, BUFSIZ);
 	
+	// открываю файл с запросом
+	int fd = open(argv[1], O_RDONLY, 0);
 	int n;
 
-	// читаем в буфер данные из сокета, пока они есть
-	while ((n = read(sockfd, buf, sizeof(buf) - 1)) > 0) {
+	// читаю файл с запросом в буфер
+	while ((n = read(fd, buf, BUFSIZ)) != 0) {
 		if (n == -1) {
-			perror("read");
-			return -1;
+			fprintf(stderr, "%s: %s", argv[1], strerror(errno));
+			break;
 		}
-		// ???
+
 		buf[n] = 0;
 		
-		if (write(1, buf, n) == -1) {
-			perror("write");
-		}
+		// записываю запрос в сокет
+		write(sockfd, buf, n);	
+	}
+
+	// закрываю файл с запросом
+	close(fd);
+
+	// устанавливаем соединение с сервером
+	if ((connect(sockfd, (struct sockaddr *) &server, sizeof(server))) == -1) {
+		perror("connect");
+		return -1;
 	}
 
 	return 0;

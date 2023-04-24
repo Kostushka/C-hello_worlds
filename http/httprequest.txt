@@ -1,0 +1,7 @@
+GET / HTTP/1.1
+host: ru.m.wikipedia.org
+connection: close
+user-agent: Mozilla/5.0
+date: Thu, 13 Apr 2023 04:03:45 GMT
+accept-language: ru
+
