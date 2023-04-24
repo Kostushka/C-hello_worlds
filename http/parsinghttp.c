@@ -32,27 +32,6 @@ char *read_line(int fd);
 void parsing_req(char *s, struct Http_request *http);
 void parsing_head(char *s, struct Http_request *http);
 
-int main(int argc, char *argv[]) {
-
-	struct Http_request *http;
-	http = (struct Http_request *) malloc(sizeof(struct Http_request));
-	if (http == NULL) {
-		perror("malloc");
-		return 1;
-	}
-
-	if (argc == 2) {
-		// открыть файл
-		int fd = open(argv[1], O_RDONLY, 0);
-		// прочитать файл
-		readreq(fd, http);
-		// закрыть файл
-		close(fd);
-	}
-
-	return 0;
-}
-
 void readreq(int fd, struct Http_request *http) {
 
 	// получаем строку запроса в преобразованном виде
@@ -102,6 +81,7 @@ void readreq(int fd, struct Http_request *http) {
 	if (keys == NULL) {
 		return;
 	}
+	printf("---All keys and values in hash---\n");
 	for (int i = 0; keys[i]; i++) {
 		char *value = hash_get(http->headers, keys[i]);
 		printf("%s %s\n", keys[i], value);

@@ -1,10 +1,11 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <time.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "parsinghttp.h"
 
 // int socket(int domain, int type, int protocol);
 // int bind(int sockfd, const struct sockaddr *my_addr, socklen_t addrlen);
@@ -65,7 +66,8 @@ int main(void) {
 
 	int sockfd_client;
 
-	char buf[BUFSIZ];
+	// char buf[BUFSIZ];
+	// memset(buf, 0, BUFSIZ);
 
 	while (1) {
 		// принятие запроса на установление соединения, создание нового сокета для каждого соединения (конкретного клиента)
@@ -75,10 +77,31 @@ int main(void) {
 			return -1;
 		}
 
+		// создаем структуру для записи запроса
+		struct Http_request *http = (struct Http_request *) malloc(sizeof(struct Http_request));
+		if (http == NULL) {
+			perror("malloc");
+			return -1;
+		}
+
+		// чтение запроса в структуру
+		readreq(sockfd_client, http);
+		
+		/*
+		int n;
+		
 		// читаю в буфер из клиентского сокета запрос
-		read(sockfd_client, buf, BUFSIZ);
-		// пишу в stdout из буфера запрос
-		write(1, buf, BUFSIZ);
+		while ((n = read(sockfd_client, buf, BUFSIZ)) != 0) {
+			if (n == -1) {
+				perror("read");
+				break;
+			}
+			
+			// пишу в stdout из буфера запрос
+			write(1, buf, n);
+		}
+		*/
+		
 	
 		// закрываем файл сокета для клиента
 		close(sockfd_client);

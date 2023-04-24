@@ -51,7 +51,13 @@ int main(int argc, char *argv[]) {
 		perror("socket");
 		return -1;
 	}
-
+	
+	// устанавливаем соединение с сервером
+	if ((connect(sockfd, (struct sockaddr *) &server, sizeof(server))) == -1) {
+		perror("connect");
+		return -1;
+	}
+	
 	char buf[BUFSIZ];
 	memset(buf, 0, BUFSIZ);
 	
@@ -65,21 +71,15 @@ int main(int argc, char *argv[]) {
 			fprintf(stderr, "%s: %s", argv[1], strerror(errno));
 			break;
 		}
-
-		buf[n] = 0;
 		
 		// записываю запрос в сокет
-		write(sockfd, buf, n);	
+		if (write(sockfd, buf, n) == -1) {
+			perror("write");
+		}	
 	}
 
 	// закрываю файл с запросом
 	close(fd);
-
-	// устанавливаем соединение с сервером
-	if ((connect(sockfd, (struct sockaddr *) &server, sizeof(server))) == -1) {
-		perror("connect");
-		return -1;
-	}
 
 	return 0;
 }
