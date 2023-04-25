@@ -81,5 +81,16 @@ int main(int argc, char *argv[]) {
 	// закрываю файл с запросом
 	close(fd);
 
+	while ((n = read(sockfd, buf, BUFSIZ)) != 0) {
+		if (n == -1) {
+			perror("read");
+			break;
+		}
+
+		if (write(1, buf, n) == -1) {
+			perror("write");
+		}
+	}
+
 	return 0;
 }

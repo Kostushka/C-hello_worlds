@@ -89,8 +89,8 @@ void readreq(int fd, struct Http_request *http) {
 
 	free(keys);
 	free(reqline);
-	hash_delete(http->headers);
-	free(http);
+	// hash_delete(http->headers);
+	// free(http);
 }
 
 char *read_line(int fd) {

@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -87,6 +88,30 @@ int main(void) {
 		// чтение запроса в структуру
 		readreq(sockfd_client, http);
 		
+		int fd, n;
+		char buf[BUFSIZ];
+		
+		if (strcmp(http->method, "GET") == 0) {
+			if ((fd = open("/home/nastya/C-hello_worlds/http/response.txt", O_RDONLY, 0)) == -1) {
+				perror("open");
+				return 1;
+			}
+			
+			while ((n = (read(fd, buf, BUFSIZ))) != 0) {
+				if (n == -1) {
+					perror("read");
+					return 1;
+				}
+
+				if (write(sockfd_client, buf, BUFSIZ) == -1) {
+					perror("write");
+					return 1;
+				}
+			}			
+		}
+
+		close(fd);
+				
 		/*
 		int n;
 		
