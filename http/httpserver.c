@@ -1,6 +1,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -8,26 +9,15 @@
 #include <stdio.h>
 #include "parsinghttp.h"
 
-// int socket(int domain, int type, int protocol);
-// int bind(int sockfd, const struct sockaddr *my_addr, socklen_t addrlen);
-// int listen(int sockfd, int backlog);
-// int accept(int sockfd, struct sockaddr *cliaddr, socklen_t *addrlen);
+#define GET 1	   // 00000001
+#define POST 2     // 00000010
+#define PATCH 4    // 00000100
+#define PUT 8      // 00001000
+#define DELETE 16  // 00010000
 
-// преобразование значений между хостовым и сетевым порядком байтов
-// uint32_t htonl(uint32_t hostlong);
-// uint16_t htons(uint16_t hostshort);
+char method_get(struct Http_request *);
 
 int main(void) {
-
-	// структура с данными сокета сервера
-	// struct sockaddr_in {
-	   // short int            sin_family; - семейство протоколов создаваемого сокета: AF_INET для сетевого протокола IPv4
-	   // unsigned short int   sin_port; - номер порта который намерен занять процесс
-	   // struct in_addr       sin_addr; - содержит поле s_addr, 
-	   // 								   которому можно присвоить 32х битное значение IP адреса: 
-	   //                                  INADDR_ANY - все адреса локального хоста (0.0.0.0);
-	   // unsigned char        sin_zero[8];
-	// };
 
 	struct sockaddr_in server;
 
@@ -67,9 +57,6 @@ int main(void) {
 
 	int sockfd_client;
 
-	// char buf[BUFSIZ];
-	// memset(buf, 0, BUFSIZ);
-
 	while (1) {
 		// принятие запроса на установление соединения, создание нового сокета для каждого соединения (конкретного клиента)
 		sockfd_client = accept(sockfd, (struct sockaddr *) NULL, NULL);
@@ -87,50 +74,111 @@ int main(void) {
 
 		// чтение запроса в структуру
 		readreq(sockfd_client, http);
+
+		// путь до файла с HTTP-ответом	
+		char *status = "/home/nastya/C-hello_worlds/http/response.txt";
 		
-		int fd, n;
+		// путь до запрашиваемого файла, если resource: /
+		char *home_file = "/home/nastya/C-hello_worlds/http/home.html";
+
+		// ----------------------------------------------------------
+		// ЗАПИСЬ ДАТЫ В ФАЙЛ HTTP-ОТВЕТА
+		// ----------------------------------------------------------
+		
+		// получаем дату
+		time_t t = time(NULL);
+		
+		// открываем файл с HTTP-ответом для чтения и записи
+		int fd_status = open(status, O_RDWR, 0);
+		
+		char c;
 		char buf[BUFSIZ];
-		
-		if (strcmp(http->method, "GET") == 0) {
-			if ((fd = open("/home/nastya/C-hello_worlds/http/response.txt", O_RDONLY, 0)) == -1) {
-				perror("open");
-				return 1;
+		int n = 0;
+		// читаем файл посимвольно
+		while (read(fd_status, &c, 1) != 0) {
+			if (c == 'D') {
+				while (c != ':') {
+					// записываем в буфер все символы с D до :
+					buf[n++] = c;
+					read(fd_status, &c, 1);
+				}
+				// если в буфере "Date"
+				if (strcmp(buf, "Date") == 0) {
+					// смещаемся на символ пробела для записи даты
+					lseek(fd_status, 1, 1);
+					// записываем дату в файл с HTTP-ответом
+					write(fd_status, ctime(&t), strlen(ctime(&t)));
+					break;
+				}
 			}
-			
-			while ((n = (read(fd, buf, BUFSIZ))) != 0) {
-				if (n == -1) {
-					perror("read");
-					return 1;
-				}
-
-				if (write(sockfd_client, buf, BUFSIZ) == -1) {
-					perror("write");
-					return 1;
-				}
-			}			
 		}
-
-		close(fd);
-				
-		/*
-		int n;
 		
-		// читаю в буфер из клиентского сокета запрос
-		while ((n = read(sockfd_client, buf, BUFSIZ)) != 0) {
-			if (n == -1) {
-				perror("read");
+		// закрываем файл с HTTP-ответом
+		close(fd_status);
+		
+		// ----------------------------------------------------------
+
+		// получить идентификатор метода в запросе
+		char method = method_get(http);
+
+		printf("resource: %s\n", http->resource);
+			
+		switch(method) {
+			case GET:
+				// запрос за файлом главной страницы
+				if (strcmp(http->resource, "/") == 0) {
+					// записываю в сокет файл со статусом HTTP-ответа
+					writeres(status, sockfd_client);
+
+					// записываю в сокет файл домашней страницы
+					writeres(home_file, sockfd_client);				
+				} else {
+					// записываю в сокет файл со статусом HTTP-ответа
+					writeres(status, sockfd_client);
+					
+					// записываю в сокет запрашиваемый файл 
+					writeres(http->resource, sockfd_client);
+				}
 				break;
-			}
-			
-			// пишу в stdout из буфера запрос
-			write(1, buf, n);
+			case POST:
+				break;
+			case PUT:
+				break;
+			case PATCH:
+				break;
+			case DELETE:
+				break;
 		}
-		*/
-		
-	
+
 		// закрываем файл сокета для клиента
 		close(sockfd_client);
 	}
 
 	return 0;
+}
+
+char method_get(struct Http_request *http) {
+	char method_flag = 0;
+
+	if (strcmp(http->method, "GET") == 0) {
+		method_flag = GET;
+	} 
+
+	if (strcmp(http->method, "POST") == 0) {
+		method_flag = POST;
+	}
+
+	if (strcmp(http->method, "PATCH") == 0) {
+		method_flag = PATCH;
+	}
+
+	if (strcmp(http->method, "PUT") == 0) {
+		method_flag = PUT;
+	}
+
+	if (strcmp(http->method, "DELETE") == 0) {
+		method_flag = DELETE;
+	}
+
+	return method_flag;
 }

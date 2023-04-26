@@ -28,3 +28,5 @@ char **hash_keys(struct Hash *hash);
 void hash_delete(struct Hash *hash);
 
 void readreq(int fd, struct Http_request *http);
+
+void writeres(char *filename, int out_fd);

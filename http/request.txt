@@ -1,4 +1,4 @@
-GET / HTTP/1.1
+GET /home/nastya/d1/web.txt HTTP/1.1
 host: ru.m.wikipedia.org
 connection: close
 user-agent: Mozilla/5.0

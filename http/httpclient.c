@@ -8,12 +8,6 @@
 #include <string.h>
 #include <stdio.h>
 
-// int socket(int domain, int type, int protocol);
-// int connect(int sockfd, const struct sockaddr *serv_addr, socklen_t addrlen);
-
-// uint32_t htonl(uint32_t hostlong);
-// uint16_t htons(uint16_t hostshort);
-
 int main(int argc, char *argv[]) {
 
 	if (argc != 2) {
@@ -21,15 +15,6 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	// структура с данными сервера
-	// struct sockaddr_in {
-	   // short int            sin_family;
-	   // unsigned short int   sin_port; - номер порта который намерен занять процесс
-	   // struct in_addr       sin_addr; - содержит поле s_addr, 
-	   // 								   которому можно присвоить 32х битное значение IP адреса: 
-	   //                                  INADDR_ANY - все адреса локального хоста (0.0.0.0);
-	   // unsigned char        sin_zero[8];
-	// };
 	struct sockaddr_in server;
 
 	// заполнить все поля структуры нулями
@@ -81,12 +66,14 @@ int main(int argc, char *argv[]) {
 	// закрываю файл с запросом
 	close(fd);
 
+	// читаю ответ из сокета в буфер
 	while ((n = read(sockfd, buf, BUFSIZ)) != 0) {
 		if (n == -1) {
 			perror("read");
 			break;
 		}
 
+		// вывожу ответ из буфера в stdout
 		if (write(1, buf, n) == -1) {
 			perror("write");
 		}

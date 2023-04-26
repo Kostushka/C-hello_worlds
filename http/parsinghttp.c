@@ -70,25 +70,7 @@ void readreq(int fd, struct Http_request *http) {
 				
 	} while (1);
 
-	char *host_value;
-	
-	if ((host_value = hash_get(http->headers, "host:")) != NULL) {
-		printf("Host: %s\n", host_value);
-	}
-
-	// получаю и вывожу все ключи и значения по ключам
-	char **keys = hash_keys(http->headers);
-	if (keys == NULL) {
-		return;
-	}
-	printf("---All keys and values in hash---\n");
-	for (int i = 0; keys[i]; i++) {
-		char *value = hash_get(http->headers, keys[i]);
-		printf("%s %s\n", keys[i], value);
-	}
-
-	free(keys);
-	free(reqline);
+	// free(reqline);
 	// hash_delete(http->headers);
 	// free(http);
 }
@@ -170,10 +152,7 @@ void parsing_req(char *s, struct Http_request *http) {
 	}
 
 	// записываем версию протокола
-	http->protocol_version = &s[++start];
-
-	printf("method: %s\nresource: %s\nver: %s\n", http->method, http->resource, http->protocol_version);
-	
+	http->protocol_version = &s[++start];	
 }
 
 void parsing_head(char *s, struct Http_request *http) {
