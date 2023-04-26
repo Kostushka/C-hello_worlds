@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <time.h>
+#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -90,24 +91,41 @@ int main(void) {
 		
 		// открываем файл с HTTP-ответом для чтения и записи
 		int fd_status = open(status, O_RDWR, 0);
+		if (fd_status == -1) {
+			fprintf(stderr, "%s: %s\n", status, strerror(errno));
+		}
 		
 		char c;
 		char buf[BUFSIZ];
-		int n = 0;
+		int n, count = 0;
 		// читаем файл посимвольно
-		while (read(fd_status, &c, 1) != 0) {
+		while ((n = read(fd_status, &c, 1)) != 0) {
+			if (n == -1) {
+				perror("read");
+				return -1;
+			}
+			
 			if (c == 'D') {
 				while (c != ':') {
 					// записываем в буфер все символы с D до :
-					buf[n++] = c;
-					read(fd_status, &c, 1);
+					buf[count++] = c;
+					if (read(fd_status, &c, 1) == -1) {
+						perror("read");
+						return -1;
+					}
 				}
 				// если в буфере "Date"
 				if (strcmp(buf, "Date") == 0) {
 					// смещаемся на символ пробела для записи даты
-					lseek(fd_status, 1, 1);
+					if (lseek(fd_status, 1, 1) == -1) {
+						perror("lseek");
+						return -1;
+					}
 					// записываем дату в файл с HTTP-ответом
-					write(fd_status, ctime(&t), strlen(ctime(&t)));
+					if (write(fd_status, ctime(&t), strlen(ctime(&t))) == -1) {
+						perror("write");
+						return -1;
+					}
 					break;
 				}
 			}
@@ -120,8 +138,6 @@ int main(void) {
 
 		// получить идентификатор метода в запросе
 		char method = method_get(http);
-
-		printf("resource: %s\n", http->resource);
 			
 		switch(method) {
 			case GET:
