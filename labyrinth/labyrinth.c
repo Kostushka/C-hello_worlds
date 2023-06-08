@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
-#define MAX 100
 
 struct Labyrinth {
 	int size;
