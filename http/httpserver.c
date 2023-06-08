@@ -76,8 +76,22 @@ int main(void) {
 		// чтение запроса в структуру
 		readreq(sockfd_client, http);
 
+		// создаем файл с HTTP-ответом
+		int fd_response = creat("/home/nastya/C-hello_worlds/http/response.txt", 0644);
+		if (fd_response == -1) {
+			perror("creat");
+			return -1;
+		}
+
+		char c = ' ';
+		char *code = "200 OK";
+		// записываем строку состояния
+		write(fd_response, http->protocol_version, strlen("HTTP/1.1"));
+		write(fd_response, &c, 1);
+		write(fd_response, code, strlen(code));
+
 		// путь до файла с HTTP-ответом	
-		char *status = "/home/nastya/C-hello_worlds/http/response.txt";
+		// char *status = "/home/nastya/C-hello_worlds/http/response.txt";
 		
 		// путь до запрашиваемого файла, если resource: /
 		char *home_file = "/home/nastya/C-hello_worlds/http/home.html";
@@ -86,7 +100,7 @@ int main(void) {
 		// ЗАПИСЬ ДАТЫ В ФАЙЛ HTTP-ОТВЕТА
 		// ----------------------------------------------------------
 		
-		// получаем дату
+		/*// получаем дату
 		time_t t = time(NULL);
 		
 		// открываем файл с HTTP-ответом для чтения и записи
@@ -133,7 +147,7 @@ int main(void) {
 		
 		// закрываем файл с HTTP-ответом
 		close(fd_status);
-		
+		*/
 		// ----------------------------------------------------------
 
 		// получить идентификатор метода в запросе
@@ -144,13 +158,13 @@ int main(void) {
 				// запрос за файлом главной страницы
 				if (strcmp(http->resource, "/") == 0) {
 					// записываю в сокет файл со статусом HTTP-ответа
-					writeres(status, sockfd_client);
+					// writeres(status, sockfd_client);
 
 					// записываю в сокет файл домашней страницы
 					writeres(home_file, sockfd_client);				
 				} else {
 					// записываю в сокет файл со статусом HTTP-ответа
-					writeres(status, sockfd_client);
+					// writeres(status, sockfd_client);
 					
 					// записываю в сокет запрашиваемый файл 
 					writeres(http->resource, sockfd_client);
