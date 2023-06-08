@@ -8,7 +8,7 @@
 
 struct Labyrinth {
 	int size;
-	char labyrinth[MAX][MAX];
+	char **labyrinth;
 };
 
 int parse(struct Labyrinth *, int fd);
@@ -61,6 +61,9 @@ int parse(struct Labyrinth *lab, int fd) {
 	}
 	// записываю размер лабиринта
 	lab->size = atoi(line);
+	// выделяю память под массив указателей на массивы строк == строки двумерного массива
+	// {p, p, p, p}
+	lab->labyrinth = (char **) calloc(1, sizeof(char *) * lab->size);
 
 	int i, j;
 	// формирую двумерный массив
@@ -68,6 +71,9 @@ int parse(struct Labyrinth *lab, int fd) {
 			if (get_line(fd, line, MAX) == -1) {
 				return -1;
 			}
+			// выделяю память под массив строки и записываю в указатель == столбцы двумерного массива
+			// {p, p, p, p}: p -> {'a', 'b', 'c'}
+			lab->labyrinth[i] = (char *) malloc(sizeof(char) * lab->size);
 			for (j = 0; j < lab->size; j++) {
 				if (line[j] == '\0') {
 					break;
