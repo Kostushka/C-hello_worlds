@@ -12,7 +12,7 @@ struct Labyrinth {
 };
 
 int parse(struct Labyrinth *, int fd);
-int get_line(int fd, char *s, int lim);
+int get_line(int fd, char **);
 void print_lab(struct Labyrinth);
 
 int main(int argc, char *argv[]) {
@@ -54,26 +54,37 @@ void print_lab(struct Labyrinth lab) {
 }
 
 int parse(struct Labyrinth *lab, int fd) {
-	char line[MAX];
+
+	char *line;
+	
 	// читаю первую строку файла
-	if (get_line(fd, line, MAX) == -1) {
+	if (get_line(fd, &line) == -1) {
 		return -1;
 	}
 	// записываю размер лабиринта
 	lab->size = atoi(line);
+	
 	// выделяю память под массив указателей на массивы строк == строки двумерного массива
 	// {p, p, p, p}
 	lab->labyrinth = (char **) calloc(1, sizeof(char *) * lab->size);
+	if (lab->labyrinth == NULL) {
+		perror("calloc");
+		return -1;
+	}
 
 	int i, j;
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
-			if (get_line(fd, line, MAX) == -1) {
+			if (get_line(fd, &line) == -1) {
 				return -1;
 			}
 			// выделяю память под массив строки и записываю в указатель == столбцы двумерного массива
 			// {p, p, p, p}: p -> {'a', 'b', 'c'}
 			lab->labyrinth[i] = (char *) malloc(sizeof(char) * lab->size);
+			if (lab->labyrinth[i] == NULL) {
+				perror("malloc");
+				return -1;
+			}
 			for (j = 0; j < lab->size; j++) {
 				if (line[j] == '\0') {
 					break;
@@ -89,12 +100,17 @@ int parse(struct Labyrinth *lab, int fd) {
 	return 0;
 }
 
-int get_line(int fd, char *s, int lim) {
+int get_line(int fd, char **line) {
+	char *s = *line = (char *) malloc(sizeof(char *));
+	if (s == NULL) {
+		perror("malloc");
+		return -1;
+	}
 	int i, c;
 	i = c = 0;
 	char buf;
 	
-	while (i < lim - 1) {
+	while (1) {
 		// читать по символу из файла в отдельный буфер
 		if ((c = read(fd, &buf, 1)) == 0 || c == -1) {
 			break;
