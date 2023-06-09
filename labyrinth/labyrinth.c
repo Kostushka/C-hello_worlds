@@ -149,24 +149,24 @@ char *get_line(int fd, int size) {
 	i = c = 0;
 	char buf;
 	
-	while (1) {
+	while ((c = read(fd, &buf, 1)) != 0) {
 		// читать по символу из файла в отдельный буфер
-		if ((c = read(fd, &buf, 1)) == 0 || c == -1) {
-			break;
+		if (c == -1) {
+			fprintf(stderr, "read file error\n");
+			return NULL;
 		}
 		if (buf == '\n') {
 			break;
 		}		
+		if (i == size - 1) {
+			fprintf(stderr, "buf is full: not enough space to write the line\n");
+			break;
+		}
 		s[i] = buf;
 		++i;
 	}
 
 	s[i] = '\0';
-
-	if (c == -1) {
-		fprintf(stderr, "read file error\n");
-		return NULL;
-	}
 	
 	return s;
 }
