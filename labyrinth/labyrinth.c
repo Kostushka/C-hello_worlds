@@ -104,45 +104,30 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 	
 	// выделяю память под массив указателей на массивы строк == строки двумерного массива
 	// {p, p, p, p}
-	lab->labyrinth = (char **) calloc(1, sizeof(char) * lab->size * lab->size);
+	lab->labyrinth = (char **) calloc(1, sizeof(char *) * lab->size);
 	if (lab->labyrinth == NULL) {
 		perror("calloc");
 		return NULL;
 	}
 
-	int i, j;
+	int i;
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
 			if ((line = get_line(fd, lab->size)) == NULL) {
 				return NULL;
 			}
-			// выделяю память под массив строки и записываю в указатель == столбцы двумерного массива
+			// записываю в указатель строку == столбцы двумерного массива
 			// {p, p, p, p}: p -> {'a', 'b', 'c'}
-			lab->labyrinth[i] = (char *) malloc(sizeof(char) * lab->size);
-			if (lab->labyrinth[i] == NULL) {
-				perror("malloc");
-				return NULL;
-			}
-			for (j = 0; j < lab->size; j++) {
-				if (line[j] == '\0') {
-					break;
-				} else {
-					lab->labyrinth[i][j] = line[j];
-				}
-			}
-			while (j < lab->size) {
-				lab->labyrinth[i][j] = ' ';
-				++j;
-			}
+			lab->labyrinth[i] = line;
 	}
 
 	return lab->labyrinth;
 }
 
 char *get_line(int fd, int size) {
-	char *s = (char *) malloc(sizeof(char) * size);
+	char *s = (char *) calloc(1, sizeof(char) * size);
 	if (s == NULL) {
-		perror("malloc");
+		perror("calloc");
 		return NULL;
 	}
 	int i, c;
@@ -155,18 +140,21 @@ char *get_line(int fd, int size) {
 			fprintf(stderr, "read file error\n");
 			return NULL;
 		}
+		if (i == size) {
+			fprintf(stderr, "buf is full: not enough space to write the line\n");
+			return NULL;
+		}
 		if (buf == '\n') {
 			break;
-		}		
-		if (i == size - 1) {
-			fprintf(stderr, "buf is full: not enough space to write the line\n");
-			break;
-		}
+		}				
 		s[i] = buf;
 		++i;
 	}
 
-	s[i] = '\0';
+	while (i < size) {
+		s[i] = ' ';
+		++i;	
+	}
 	
 	return s;
 }
