@@ -104,7 +104,7 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 	
 	// выделяю память под массив указателей на массивы строк == строки двумерного массива
 	// {p, p, p, p}
-	lab->labyrinth = (char **) calloc(1, sizeof(char *) * lab->size);
+	lab->labyrinth = (char **) calloc(lab->size, sizeof(char *));
 	if (lab->labyrinth == NULL) {
 		perror("calloc");
 		return NULL;
@@ -113,47 +113,62 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 	int i;
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
-			if ((line = get_line(fd, lab->size)) == NULL) {
-				return NULL;
-			}
-			// записываю в указатель строку == столбцы двумерного массива
-			// {p, p, p, p}: p -> {'a', 'b', 'c'}
-			lab->labyrinth[i] = line;
+		if ((line = get_line(fd, lab->size)) == NULL) {
+			return NULL;
+		}
+		// записываю в указатель строку == столбцы двумерного массива
+		// {p, p, p, p}: p -> {'a', 'b', 'c'}
+		lab->labyrinth[i] = line;
 	}
 
 	return lab->labyrinth;
 }
 
 char *get_line(int fd, int size) {
-	char *s = (char *) calloc(1, sizeof(char) * size);
+	// кол-во считанных из файла строк
+	static int len = 0;
+	
+	char *s = (char *) calloc(size, sizeof(char));
 	if (s == NULL) {
 		perror("calloc");
 		return NULL;
 	}
+	
 	int i, c;
 	i = c = 0;
 	char buf;
 	
+	// читать по символу из файла в отдельный буфер
 	while ((c = read(fd, &buf, 1)) != 0) {
-		// читать по символу из файла в отдельный буфер
 		if (c == -1) {
-			fprintf(stderr, "read file error\n");
-			return NULL;
-		}
-		if (i == size) {
-			fprintf(stderr, "buf is full: not enough space to write the line\n");
+			perror("read");
 			return NULL;
 		}
 		if (buf == '\n') {
 			break;
+		}
+		if (i == size) {
+			fprintf(stderr, "line number %d: not enough space to write\n", len + 1);
+			return NULL;
 		}				
-		s[i] = buf;
-		++i;
+		s[i++] = buf;
 	}
 
+	// обработка файла, который меньше заданной размерности
+	if (c == 0 && len < size + 1) { // size + 1 там должен находиться EOF
+		fprintf(stderr, "file size is less than matrix size\n");
+		return NULL;
+	}
+
+	// обработка файла, который больше заданной размерности
+	if (len == size && read(fd, &buf, 1) != 0) {
+		fprintf(stderr, "file size is larger than matrix size\n");
+		return NULL;
+	}
+	++len;
+
 	while (i < size) {
-		s[i] = ' ';
-		++i;	
+		s[i++] = ' ';
 	}
 	
 	return s;
