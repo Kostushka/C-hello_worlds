@@ -11,7 +11,7 @@ struct Labyrinth {
 };
 
 int parse(struct Labyrinth *, int fd);
-char *get_line(int fd, int size);
+char *get_line(int fd, int size, int num_line);
 void print_lab(struct Labyrinth);
 char **create_arr(struct Labyrinth *, int fd);
 
@@ -84,7 +84,7 @@ int parse(struct Labyrinth *lab, int fd) {
 	char *line;
 	
 	// читаю первую строку файла
-	if ((line = get_line(fd, 10)) == NULL) {
+	if ((line = get_line(fd, 10, 1)) == NULL) {
 		return -1;
 	}
 	// записываю размер лабиринта
@@ -113,20 +113,34 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 	int i;
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
-		if ((line = get_line(fd, lab->size)) == NULL) {
+		// читаю строку из файла
+		if ((line = get_line(fd, lab->size, i + 2)) == NULL) {
+			return NULL;
+		}
+		// проверка строки на EOF: файл меньше заданной размерности
+		if (line[0] == 0) {
+			fprintf(stderr, "file size is less than matrix size\n");
 			return NULL;
 		}
 		// записываю в указатель строку == столбцы двумерного массива
 		// {p, p, p, p}: p -> {'a', 'b', 'c'}
 		lab->labyrinth[i] = line;
 	}
+	
+	// читаю строку из файла
+	if ((line = get_line(fd, lab->size, i + 2)) == NULL) {
+		return NULL;
+	}
+	// проверка строки на НЕ EOF: файл больше заданной размерности
+	if (line[0] != 0) {
+		fprintf(stderr, "file size is larger than matrix size\n");
+		return NULL;
+	}
 
 	return lab->labyrinth;
 }
 
-char *get_line(int fd, int size) {
-	// кол-во считанных из файла строк
-	static int len = 0;
+char *get_line(int fd, int size, int num_line) {
 	
 	char *s = (char *) calloc(size, sizeof(char));
 	if (s == NULL) {
@@ -148,24 +162,16 @@ char *get_line(int fd, int size) {
 			break;
 		}
 		if (i == size) {
-			fprintf(stderr, "line number %d: not enough space to write\n", len + 1);
+			fprintf(stderr, "line number %d: not enough space to write\n", num_line);
 			return NULL;
 		}				
 		s[i++] = buf;
 	}
 
-	// обработка файла, который меньше заданной размерности
-	if (c == 0 && len < size + 1) { // size + 1 там должен находиться EOF
-		fprintf(stderr, "file size is less than matrix size\n");
-		return NULL;
-	}
-
-	// обработка файла, который больше заданной размерности
-	if (len == size && read(fd, &buf, 1) != 0) {
-		fprintf(stderr, "file size is larger than matrix size\n");
-		return NULL;
-	}
-	++len;
+	// если в строке EOF
+	if (c == 0 && s[0] == 0) {
+		return s;
+	} 
 
 	while (i < size) {
 		s[i++] = ' ';

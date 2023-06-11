@@ -1,6 +1,6 @@
 4
 X
-X
-XXXX
- +
-X
+X 
+ XX
++
+ X
