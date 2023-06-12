@@ -89,7 +89,8 @@ int parse(struct Labyrinth *lab, int fd) {
 	}
 	// записываю размер лабиринта
 	lab->size = atoi(line);
-
+	free(line);
+	
 	// создаю двумерный массив
 	if (create_arr(lab, fd) == NULL) {
 		return -1;
@@ -115,10 +116,20 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 	for (i = 0; i < lab->size; i++) {
 		// читаю строку из файла
 		if ((line = get_line(fd, lab->size, i + 2)) == NULL) {
+			free(line);
+			for (int k = 0; *lab->labyrinth[k]; k++) {
+				free(lab->labyrinth[k]);
+			}
+			free(lab->labyrinth);
 			return NULL;
 		}
 		// проверка строки на EOF: файл меньше заданной размерности
 		if (line[0] == 0) {
+			free(line);
+			for (int k = 0; *lab->labyrinth[k]; k++) {
+				free(lab->labyrinth[k]);
+			}
+			free(lab->labyrinth);
 			fprintf(stderr, "file size is less than matrix size\n");
 			return NULL;
 		}
@@ -129,10 +140,20 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 	
 	// читаю строку из файла
 	if ((line = get_line(fd, lab->size, i + 2)) == NULL) {
+		free(line);
+		for (int k = 0; *lab->labyrinth[k]; k++) {
+			free(lab->labyrinth[k]);
+		}
+		free(lab->labyrinth);
 		return NULL;
 	}
 	// проверка строки на НЕ EOF: файл больше заданной размерности
 	if (line[0] != 0) {
+		free(line);
+		for (int k = 0; *lab->labyrinth[k]; k++) {
+			free(lab->labyrinth[k]);
+		}
+		free(lab->labyrinth);
 		fprintf(stderr, "file size is larger than matrix size\n");
 		return NULL;
 	}
@@ -155,6 +176,7 @@ char *get_line(int fd, int size, int num_line) {
 	// читать по символу из файла в отдельный буфер
 	while ((c = read(fd, &buf, 1)) != 0) {
 		if (c == -1) {
+			free(s);
 			perror("read");
 			return NULL;
 		}
@@ -162,6 +184,7 @@ char *get_line(int fd, int size, int num_line) {
 			break;
 		}
 		if (i == size) {
+			free(s);
 			fprintf(stderr, "line number %d: not enough space to write\n", num_line);
 			return NULL;
 		}				
