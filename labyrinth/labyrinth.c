@@ -14,7 +14,7 @@ int parse(struct Labyrinth *, int fd);
 char *get_line(int fd, int size, int num_line);
 void print_lab(struct Labyrinth);
 char **create_arr(struct Labyrinth *, int fd);
-void destroy_lab(struct Labyrinth *, int size);
+void destroy_lab(struct Labyrinth *);
 
 int main(int argc, char *argv[]) {
 	struct Labyrinth lab;
@@ -43,13 +43,13 @@ int main(int argc, char *argv[]) {
 	print_lab(lab);
 
 	// очистить память, выделенную под лабиринт
-	destroy_lab(&lab, lab.size);
+	destroy_lab(&lab);
 	
 	return 0;
 }
 
-void destroy_lab(struct Labyrinth *lab, int size) {
-	for (int k = 0; k < size; k++) {
+void destroy_lab(struct Labyrinth *lab) {
+	for (int k = 0; k < lab->size && lab->labyrinth[k] != NULL; k++) {
 		free(lab->labyrinth[k]);
 	}
 	free(lab->labyrinth);
@@ -127,7 +127,7 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 	for (i = 0;; i++) {
 		// читаю строку из файла
 		if ((line = get_line(fd, lab->size, i + 2)) == NULL) {
-			destroy_lab(lab, i);
+			destroy_lab(lab);
 			return NULL;
 		}
 
@@ -135,18 +135,20 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 			// проверка строки на EOF: файл меньше заданной размерности
 			if (line[0] == 0) {
 				free(line);
-				destroy_lab(lab, i);
+				destroy_lab(lab);
 				fprintf(stderr, "file size is less than matrix size\n");
 				return NULL;
 			}
 			// записываю в указатель строку == столбцы двумерного массива
 			// {p, p, p, p}: p -> {'a', 'b', 'c'}
 			lab->labyrinth[i] = line;
-		} else if (i == lab->size) {
+		}
+
+		if (i == lab->size) {
 			// проверка строки на НЕ EOF: файл больше заданной размерности
 			if (line[0] != 0) {
 				free(line);
-				destroy_lab(lab, i);
+				destroy_lab(lab);
 				fprintf(stderr, "file size is larger than matrix size\n");
 				return NULL;
 			}
