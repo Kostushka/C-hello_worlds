@@ -14,7 +14,7 @@ int parse(struct Labyrinth *, int fd);
 char *get_line(int fd, int size, int num_line);
 void print_lab(struct Labyrinth);
 char **create_arr(struct Labyrinth *, int fd);
-void free_struct(struct Labyrinth *);
+void clear_lab(struct Labyrinth *);
 
 int main(int argc, char *argv[]) {
 	struct Labyrinth lab;
@@ -42,13 +42,14 @@ int main(int argc, char *argv[]) {
 	// отрисовать лабиринт
 	print_lab(lab);
 
-	free_struct(&lab);
+	// очистить память, выделенную под лабиринт
+	clear_lab(&lab);
 	
 	return 0;
 }
 
-void free_struct(struct Labyrinth *lab) {
-	for (int k = 0; *lab->labyrinth[k]; k++) {
+void clear_lab(struct Labyrinth *lab) {
+	for (int k = 0; k < lab->size; k++) {
 		free(lab->labyrinth[k]);
 	}
 	free(lab->labyrinth);
@@ -126,13 +127,13 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 	for (i = 0; i < lab->size; i++) {
 		// читаю строку из файла
 		if ((line = get_line(fd, lab->size, i + 2)) == NULL) {
-			free_struct(lab);
+			clear_lab(lab);
 			return NULL;
 		}
 		// проверка строки на EOF: файл меньше заданной размерности
 		if (line[0] == 0) {
 			free(line);
-			free_struct(lab);
+			clear_lab(lab);
 			fprintf(stderr, "file size is less than matrix size\n");
 			return NULL;
 		}
@@ -140,19 +141,20 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 		// {p, p, p, p}: p -> {'a', 'b', 'c'}
 		lab->labyrinth[i] = line;
 	}
-	
+
 	// читаю строку из файла
 	if ((line = get_line(fd, lab->size, i + 2)) == NULL) {
-		free_struct(lab);
+		clear_lab(lab);
 		return NULL;
 	}
 	// проверка строки на НЕ EOF: файл больше заданной размерности
 	if (line[0] != 0) {
 		free(line);
-		free_struct(lab);
+		clear_lab(lab);
 		fprintf(stderr, "file size is larger than matrix size\n");
 		return NULL;
 	}
+	free(line);
 
 	return lab->labyrinth;
 }
