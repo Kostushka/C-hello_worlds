@@ -18,7 +18,7 @@ struct Labyrinth {
 };
 
 int parse(struct Labyrinth *, int fd, int file_size);
-char *get_line(int fd, int size, int num_line, int file_size);
+char *get_line(int fd, int size, int num_line);
 void print_lab(struct Labyrinth);
 char **create_arr(struct Labyrinth *, int fd, int file_size);
 void destroy_lab(struct Labyrinth *);
@@ -110,7 +110,7 @@ int parse(struct Labyrinth *lab, int fd, int file_size) {
 	char *line;
 	
 	// читаю первую строку файла
-	if ((line = get_line(fd, 10, 1, file_size)) == NULL) {
+	if ((line = get_line(fd, 10, 1)) == NULL) {
 		return -1;
 	}
 	// записываю размер лабиринта
@@ -141,17 +141,13 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
 		// читаю строку из файла
-		line = get_line(fd, lab->size, i + 2, file_size);
+		line = get_line(fd, lab->size, i + 2);
 		
 		// проверка строки на EOF: файл меньше заданной размерности
 		if (line == NULL) {
 			fprintf(stderr, "unexpected EOF: file size is less than matrix size\n");
 			destroy_lab(lab);
 			return NULL;
-		}
-		
-		if (line == NULL && i == lab->size) {
-			break;
 		}
 
 		// записываю в указатель строку == столбцы двумерного массива
@@ -170,13 +166,7 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 	return lab->labyrinth;
 }
 
-char *get_line(int fd, int size, int num_line, int file_size) {
-	static int count;
-	// файловая позиция совпала с размером файла
-	if (count == file_size) {
-		return NULL;
-	}
-	
+char *get_line(int fd, int size, int num_line) {
 	char *s = (char *) calloc(size, sizeof(char));
 	if (s == NULL) {
 		perror("calloc");
@@ -195,7 +185,6 @@ char *get_line(int fd, int size, int num_line, int file_size) {
 			return NULL;
 		}
 		if (buf == '\n') {
-			++count;
 			break;
 		}
 		if (i == size) {
@@ -204,7 +193,6 @@ char *get_line(int fd, int size, int num_line, int file_size) {
 			return NULL;
 		}				
 		s[i++] = buf;
-		++count;
 	}
 
 	while (i < size) {
