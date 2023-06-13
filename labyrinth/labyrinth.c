@@ -18,7 +18,7 @@ struct Labyrinth {
 };
 
 int parse(struct Labyrinth *, int fd, int file_size);
-char *get_row(struct Point *, int fd, int size, int num_line);
+char *get_row(int fd, int size, int num_line, struct Point *);
 void print_lab(struct Labyrinth);
 char **create_arr(struct Labyrinth *, int fd, int file_size);
 void destroy_lab(struct Labyrinth *);
@@ -26,8 +26,8 @@ struct Point *get_point(struct Point *, int c, int num_line, int num_c);
 
 int main(int argc, char *argv[]) {
 	struct Labyrinth lab;
-	lab.point.x = 0;
-	lab.point.y = 0;
+	lab.point.x = -1;
+	lab.point.y = -1;
 	
 	int fd;
 
@@ -114,7 +114,7 @@ int parse(struct Labyrinth *lab, int fd, int file_size) {
 	char *line;
 	
 	// читаю первую строку файла
-	if ((line = get_row(&lab->point, fd, 10, 1)) == NULL) {
+	if ((line = get_row(fd, 10, 0, &lab->point)) == NULL) {
 		return -1;
 	}
 	// записываю размер лабиринта
@@ -145,7 +145,7 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
 		// читаю строку из файла
-		line = get_row(&lab->point, fd, lab->size, i + 2);
+		line = get_row(fd, lab->size, i, &lab->point);
 		
 		// проверка строки на EOF: файл меньше заданной размерности
 		if (line == NULL) {
@@ -160,7 +160,7 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 	}
 	
 	// проверка, что координаты '*' получены 
-	if (lab->point.x == 0) {
+	if (lab->point.x == -1) {
 		fprintf(stderr, "file incorrect: missing symbol '*'\n");
 		destroy_lab(lab);
 		return NULL;
@@ -180,7 +180,7 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 	return lab->labyrinth;
 }
 
-char *get_row(struct Point *point, int fd, int size, int num_line) {
+char *get_row(int fd, int size, int num_line, struct Point *point) {
 	char *s = (char *) calloc(size, sizeof(char));
 	if (s == NULL) {
 		perror("calloc");
@@ -203,15 +203,17 @@ char *get_row(struct Point *point, int fd, int size, int num_line) {
 		}
 		if (i == size) {
 			free(s);
-			fprintf(stderr, "line number %d: not enough space to write\n", num_line);
+			// num_line + 2 - отсчет с 0 и 1-ая строка содержит служебную информацию 
+			fprintf(stderr, "line number %d: not enough space to write\n", num_line + 2);
 			return NULL;
-		}				
-		s[i++] = buf;
-		
+		}
+				
 		// получить координаты '*'
 		if (get_point(point, buf, num_line, i) == NULL) {
 			return NULL;
 		}
+				
+		s[i++] = buf;
 	}
 
 	if (c == 0) {
@@ -231,10 +233,12 @@ struct Point *get_point(struct Point *point, int c, int num_line, int num_c) {
 		return point;
 	}
 	// проверка, что в строке уже есть '*'
-	if (point->x) {
-		fprintf(stderr, "file incorrect: more than one '*' in file, second '*' in %d line\n", num_line);
+	if (point->x != -1) {
+		// num_line + 2 - отсчет с 0 и 1-ая строка содержит служебную информацию 
+		fprintf(stderr, "file incorrect: more than one '*' in file, second '*' in %d line\n", num_line + 2);
 		return NULL;
 	}
 	point->x = num_line;
 	point->y = num_c;
+	return point;
 }
