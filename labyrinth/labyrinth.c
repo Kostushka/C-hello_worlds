@@ -4,21 +4,32 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+
+struct Point {
+	int x;
+	int y;
+};
 
 struct Labyrinth {
 	int size;
 	char **labyrinth;
+	struct Point point;
 };
 
-int parse(struct Labyrinth *, int fd);
-char *get_line(int fd, int size, int num_line);
+int parse(struct Labyrinth *, int fd, int file_size);
+char *get_line(int fd, int size, int num_line, int file_size);
 void print_lab(struct Labyrinth);
-char **create_arr(struct Labyrinth *, int fd);
+char **create_arr(struct Labyrinth *, int fd, int file_size);
 void destroy_lab(struct Labyrinth *);
 
 int main(int argc, char *argv[]) {
 	struct Labyrinth lab;
 	int fd;
+
+	// получить размер файла
+	struct stat stbuf;
+	stat(argv[1], &stbuf);
 
 	// проверить корректность параметров программы
 	if (argc != 2) {
@@ -32,7 +43,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// функция парсинга текстового файла
-	if (parse(&lab, fd) < 0) {
+	if (parse(&lab, fd, stbuf.st_size) < 0) {
 		return 1;
 	}
 
@@ -41,6 +52,8 @@ int main(int argc, char *argv[]) {
 
 	// отрисовать лабиринт
 	print_lab(lab);
+
+	printf("*: {%d; %d}\n", lab.point.x, lab.point.y);
 
 	// очистить память, выделенную под лабиринт
 	destroy_lab(&lab);
@@ -90,12 +103,12 @@ void print_lab(struct Labyrinth lab) {
 	putchar('\n');
 }
 
-int parse(struct Labyrinth *lab, int fd) {
+int parse(struct Labyrinth *lab, int fd, int file_size) {
 
 	char *line;
 	
 	// читаю первую строку файла
-	if ((line = get_line(fd, 10, 1)) == NULL) {
+	if ((line = get_line(fd, 10, 1, file_size)) == NULL) {
 		return -1;
 	}
 	// записываю размер лабиринта
@@ -103,14 +116,14 @@ int parse(struct Labyrinth *lab, int fd) {
 	free(line);
 	
 	// создаю двумерный массив
-	if (create_arr(lab, fd) == NULL) {
+	if (create_arr(lab, fd, file_size) == NULL) {
 		return -1;
 	}
 	
 	return 0;
 }
 
-char **create_arr(struct Labyrinth *lab, int fd) {
+char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 
 	char *line;
 	
@@ -126,41 +139,49 @@ char **create_arr(struct Labyrinth *lab, int fd) {
 	// формирую двумерный массив
 	for (i = 0;; i++) {
 		// читаю строку из файла
-		if ((line = get_line(fd, lab->size, i + 2)) == NULL) {
+		line = get_line(fd, lab->size, i + 2, file_size);
+		
+		// проверка строки на EOF: файл меньше заданной размерности
+		if (line == NULL && i < lab->size) {
+			fprintf(stderr, "unexpected EOF: file size is less than matrix size\n");
 			destroy_lab(lab);
 			return NULL;
 		}
-
-		if (i < lab->size) {
-			// проверка строки на EOF: файл меньше заданной размерности
-			if (line[0] == 0) {
-				free(line);
-				destroy_lab(lab);
-				fprintf(stderr, "file size is less than matrix size\n");
-				return NULL;
-			}
-			// записываю в указатель строку == столбцы двумерного массива
-			// {p, p, p, p}: p -> {'a', 'b', 'c'}
-			lab->labyrinth[i] = line;
+		
+		// проверка строки на НЕ EOF: файл больше заданной размерности
+		if (line != NULL && i == lab->size) {
+			free(line);
+			fprintf(stderr, "file size is larger than matrix size\n");
+			destroy_lab(lab);
+			return NULL;
+		}
+		
+		if (line == NULL && i == lab->size) {
+			break;
 		}
 
-		if (i == lab->size) {
-			// проверка строки на НЕ EOF: файл больше заданной размерности
-			if (line[0] != 0) {
-				free(line);
-				destroy_lab(lab);
-				fprintf(stderr, "file size is larger than matrix size\n");
-				return NULL;
+		// записываю в указатель строку == столбцы двумерного массива
+		// {p, p, p, p}: p -> {'a', 'b', 'c'}
+		lab->labyrinth[i] = line;
+		
+		// получить координаты '*'
+		for (int k = 0; k < lab->size; k++) {
+			if (line[k] == '*') {
+				lab->point.x = i + 2;
+				lab->point.y = k + 1;
 			}
-			free(line);
-			break;
 		}
 	}
 	
 	return lab->labyrinth;
 }
 
-char *get_line(int fd, int size, int num_line) {
+char *get_line(int fd, int size, int num_line, int file_size) {
+	static int count;
+	// файловая позиция совпала с размером файла
+	if (count == file_size) {
+		return NULL;
+	}
 	
 	char *s = (char *) calloc(size, sizeof(char));
 	if (s == NULL) {
@@ -170,7 +191,7 @@ char *get_line(int fd, int size, int num_line) {
 	
 	int i, c;
 	i = c = 0;
-	char buf;
+	char buf = 0;
 	
 	// читать по символу из файла в отдельный буфер
 	while ((c = read(fd, &buf, 1)) != 0) {
@@ -180,6 +201,7 @@ char *get_line(int fd, int size, int num_line) {
 			return NULL;
 		}
 		if (buf == '\n') {
+			++count;
 			break;
 		}
 		if (i == size) {
@@ -188,12 +210,8 @@ char *get_line(int fd, int size, int num_line) {
 			return NULL;
 		}				
 		s[i++] = buf;
+		++count;
 	}
-
-	// если в строке EOF
-	if (c == 0 && s[0] == 0) {
-		return s;
-	} 
 
 	while (i < size) {
 		s[i++] = ' ';
