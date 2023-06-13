@@ -195,6 +195,11 @@ char *get_line(int fd, int size, int num_line) {
 		s[i++] = buf;
 	}
 
+	if (c == 0) {
+		fprintf(stderr, "unexpected EOF");
+		return NULL;
+	}
+
 	while (i < size) {
 		s[i++] = ' ';
 	}
