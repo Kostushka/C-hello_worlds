@@ -18,11 +18,11 @@ struct Labyrinth {
 };
 
 int parse(struct Labyrinth *, int fd, int file_size);
-char *get_row(struct Labyrinth *, int fd, int size, int num_line);
+char *get_row(struct Point *, int fd, int size, int num_line);
 void print_lab(struct Labyrinth);
 char **create_arr(struct Labyrinth *, int fd, int file_size);
 void destroy_lab(struct Labyrinth *);
-void get_point(struct Labyrinth *, int c, int num_line, int num_c);
+void *get_point(struct Point *, int c, int num_line, int num_c);
 
 int main(int argc, char *argv[]) {
 	struct Labyrinth lab;
@@ -114,7 +114,7 @@ int parse(struct Labyrinth *lab, int fd, int file_size) {
 	char *line;
 	
 	// читаю первую строку файла
-	if ((line = get_row(lab, fd, 10, 1)) == NULL) {
+	if ((line = get_row(&lab->point, fd, 10, 1)) == NULL) {
 		return -1;
 	}
 	// записываю размер лабиринта
@@ -146,7 +146,7 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
 		// читаю строку из файла
-		line = get_row(lab, fd, lab->size, i + 2);
+		line = get_row(&lab->point, fd, lab->size, i + 2);
 		
 		// проверка строки на EOF: файл меньше заданной размерности
 		if (line == NULL) {
@@ -191,15 +191,15 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 	return lab->labyrinth;
 }
 
-char *get_row(struct Labyrinth *lab, int fd, int size, int num_line) {
+char *get_row(struct Point *point, int fd, int size, int num_line) {
 	char *s = (char *) calloc(size, sizeof(char));
 	if (s == NULL) {
 		perror("calloc");
 		return NULL;
 	}
 	
-	int i, c, count;
-	i = c = count = 0;
+	int i, c;
+	i = c = 0;
 	char buf = 0;
 	
 	// читать по символу из файла в отдельный буфер
@@ -220,17 +220,9 @@ char *get_row(struct Labyrinth *lab, int fd, int size, int num_line) {
 		s[i++] = buf;
 		
 		// получить координаты '*'
-		get_point(lab, buf, num_line, i);
-		
-		// подсчет символов '*' в одной строке
-		if (buf == '*') {
-			++count;
+		if (get_point(point, buf, num_line, i) == NULL) {
+			return NULL;
 		}
-	}
-	// проверка, что в строке один символ '*' или ни одного
-	if (count > 1) {
-		fprintf(stderr, "file incorrect: %d symbol '*' in %d line\n", count, num_line);
-		return NULL;
 	}
 
 	if (c == 0) {
@@ -245,9 +237,14 @@ char *get_row(struct Labyrinth *lab, int fd, int size, int num_line) {
 	return s;
 }
 
-void get_point(struct Labyrinth *lab, int c, int num_line, int num_c) {
+void *get_point(struct Point *point, int c, int num_line, int num_c) {
 	if (c == '*') {
-		lab->point.x = num_line;
-		lab->point.y = num_c;
+		// проверка, что в строке уже есть '*'
+		if (point->x == num_line) {
+			fprintf(stderr, "file incorrect: more than one '*' in %d line\n", num_line);
+			return NULL;
+		}
+		point->x = num_line;
+		point->y = num_c;
 	}
 }
