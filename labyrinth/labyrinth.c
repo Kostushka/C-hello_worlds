@@ -27,14 +27,16 @@ int main(int argc, char *argv[]) {
 	struct Labyrinth lab;
 	int fd;
 
-	// получить размер файла
-	struct stat stbuf;
-	stat(argv[1], &stbuf);
-
 	// проверить корректность параметров программы
 	if (argc != 2) {
 		printf("incorrect input of program args\n");
 		return 1;
+	}
+
+	// получить размер файла
+	struct stat stbuf;
+	if (stat(argv[1], &stbuf) == -1) {
+		fprintf(stderr, "%s: %s\n", argv[1], strerror(errno));
 	}
 
 	// открыть файл конфигурации
@@ -137,21 +139,13 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 
 	int i;
 	// формирую двумерный массив
-	for (i = 0;; i++) {
+	for (i = 0; i < lab->size; i++) {
 		// читаю строку из файла
 		line = get_line(fd, lab->size, i + 2, file_size);
 		
 		// проверка строки на EOF: файл меньше заданной размерности
-		if (line == NULL && i < lab->size) {
+		if (line == NULL) {
 			fprintf(stderr, "unexpected EOF: file size is less than matrix size\n");
-			destroy_lab(lab);
-			return NULL;
-		}
-		
-		// проверка строки на НЕ EOF: файл больше заданной размерности
-		if (line != NULL && i == lab->size) {
-			free(line);
-			fprintf(stderr, "file size is larger than matrix size\n");
 			destroy_lab(lab);
 			return NULL;
 		}
