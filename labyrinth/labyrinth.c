@@ -22,7 +22,7 @@ char *get_row(struct Point *, int fd, int size, int num_line);
 void print_lab(struct Labyrinth);
 char **create_arr(struct Labyrinth *, int fd, int file_size);
 void destroy_lab(struct Labyrinth *);
-void *get_point(struct Point *, int c, int num_line, int num_c);
+struct Point *get_point(struct Point *, int c, int num_line, int num_c);
 
 int main(int argc, char *argv[]) {
 	struct Labyrinth lab;
@@ -142,7 +142,6 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 	}
 
 	int i;
-	int count = 0;
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
 		// читаю строку из файла
@@ -158,20 +157,10 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 		// записываю в указатель строку == столбцы двумерного массива
 		// {p, p, p, p}: p -> {'a', 'b', 'c'}
 		lab->labyrinth[i] = line;
-
-		// подсчет '*' в строках
-		if (lab->point.x == i + 2) {
-			++count;
-		}	
 	}
-	// проверка, что '*' один на весь файл 
-	if (count > 1) {
-		fprintf(stderr, "file incorrect: %d symbol '*' in file\n", count);
-		destroy_lab(lab);
-		return NULL;
-	}
+	
 	// проверка, что координаты '*' получены 
-	if (!count) {
+	if (lab->point.x == 0) {
 		fprintf(stderr, "file incorrect: missing symbol '*'\n");
 		destroy_lab(lab);
 		return NULL;
@@ -237,14 +226,15 @@ char *get_row(struct Point *point, int fd, int size, int num_line) {
 	return s;
 }
 
-void *get_point(struct Point *point, int c, int num_line, int num_c) {
-	if (c == '*') {
-		// проверка, что в строке уже есть '*'
-		if (point->x == num_line) {
-			fprintf(stderr, "file incorrect: more than one '*' in %d line\n", num_line);
-			return NULL;
-		}
-		point->x = num_line;
-		point->y = num_c;
+struct Point *get_point(struct Point *point, int c, int num_line, int num_c) {
+	if (c != '*') {
+		return point;
 	}
+	// проверка, что в строке уже есть '*'
+	if (point->x) {
+		fprintf(stderr, "file incorrect: more than one '*' in file, second '*' in %d line\n", num_line);
+		return NULL;
+	}
+	point->x = num_line;
+	point->y = num_c;
 }
