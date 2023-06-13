@@ -25,6 +25,9 @@ void destroy_lab(struct Labyrinth *);
 
 int main(int argc, char *argv[]) {
 	struct Labyrinth lab;
+	lab.point.x = 0;
+	lab.point.y = 0;
+	
 	int fd;
 
 	// проверить корректность параметров программы
@@ -145,7 +148,7 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 		
 		// проверка строки на EOF: файл меньше заданной размерности
 		if (line == NULL) {
-			fprintf(stderr, "unexpected EOF: file size is less than matrix size\n");
+			fprintf(stderr, "file size is less than matrix size\n");
 			destroy_lab(lab);
 			return NULL;
 		}
@@ -153,7 +156,7 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 		// записываю в указатель строку == столбцы двумерного массива
 		// {p, p, p, p}: p -> {'a', 'b', 'c'}
 		lab->labyrinth[i] = line;
-		
+
 		// получить координаты '*'
 		for (int k = 0; k < lab->size; k++) {
 			if (line[k] == '*') {
@@ -161,6 +164,23 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 				lab->point.y = k + 1;
 			}
 		}
+	}
+	// проверка, что координаты '*' получены
+	if (lab->point.x == 0) {
+		fprintf(stderr, "file incorrect: missing symbol '*'\n");
+		destroy_lab(lab);
+		return NULL;
+	}
+
+	// позиция в файле после прочтения
+	int pos = lseek(fd, 0, SEEK_CUR);
+	if (pos == -1) {
+		fprintf(stderr, "%s\n", strerror(errno));
+	}
+	if (pos != file_size) {
+		fprintf(stderr, "file size is larger than matrix size\n");
+		destroy_lab(lab);
+		return NULL;
 	}
 	
 	return lab->labyrinth;
@@ -196,7 +216,7 @@ char *get_line(int fd, int size, int num_line) {
 	}
 
 	if (c == 0) {
-		fprintf(stderr, "unexpected EOF");
+		fprintf(stderr, "unexpected EOF\n");
 		return NULL;
 	}
 
