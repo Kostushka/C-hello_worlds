@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
 	// очистить память, выделенную под лабиринт
 	destroy_lab(lab);
-	
+
 	return 0;
 }
 
@@ -111,6 +111,23 @@ struct Labyrinth *init_labirint(int fd, int file_size) {
 	struct Labyrinth *lab = (struct Labyrinth *) malloc(sizeof(struct Labyrinth));
 	lab->point.x = -1;
 	lab->point.y = -1;
+	
+	char *line;
+	
+	// читаю первую строку файла
+	if ((line = get_row(fd, 10, 0, &lab->point)) == NULL) {
+		free(lab);
+		return NULL;
+	}
+
+	// записываю размер лабиринта
+	if (sscanf(line, "%d", &lab->size) != 1) {
+		free(line);
+		destroy_lab(lab);
+		printf("Invalid string: %s\n", line);
+		return NULL;
+	}
+	free(line);
 
 	// выделяю память под массив указателей на массивы строк == строки двумерного массива
 	// {p, p, p, p}
@@ -120,19 +137,6 @@ struct Labyrinth *init_labirint(int fd, int file_size) {
 		perror("calloc");
 		return NULL;
 	}
-
-	char *line;
-	
-	// читаю первую строку файла
-	if ((line = get_row(fd, 10, 0, &lab->point)) == NULL) {
-		return NULL;
-	}
-	// записываю размер лабиринта
-	if (sscanf(line, "%d", &lab->size) != 1) {
-		printf("Invalid string: %s\n", line);
-		return NULL;
-	}
-	free(line);
 	
 	// создаю двумерный массив
 	if (load_labyrinth(lab, fd, file_size) == NULL) {
@@ -146,7 +150,7 @@ struct Labyrinth *init_labirint(int fd, int file_size) {
 struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 
 	char *line;
-	
+
 	int i;
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
@@ -221,7 +225,7 @@ char *get_row(int fd, int size, int num_line, struct Point *point) {
 		s[i++] = buf;
 	}
 
-	// провекра, что EOF и в s ничего не записано, так как не во всех файлах есть \n в конце любой строки
+	// проверка, что EOF и в s ничего не записано, так как не во всех файлах есть \n в конце любой строки
 	if (c == 0 && i == 0) {
 		fprintf(stderr, "unexpected EOF\n");
 		return NULL;
