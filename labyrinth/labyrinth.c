@@ -5,7 +5,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#define MAX 10
 
 struct Point {
 	int x;
@@ -76,6 +75,10 @@ char *get_string(int fd, char *s, int n) {
 			perror("read");
 			return NULL;
 		}
+		if (i == n) {
+			fprintf(stderr, "file incorrect\n");
+			return NULL;
+		}
 		if (buf == '\n') {
 			s[i] = '\0';
 			break;
@@ -84,11 +87,6 @@ char *get_string(int fd, char *s, int n) {
 	}
 
 	if (c == 0) {
-		fprintf(stderr, "file incorrect\n");
-		return NULL;
-	}
-
-	if (i >= n) {
 		fprintf(stderr, "file incorrect\n");
 		return NULL;
 	}
@@ -144,10 +142,10 @@ struct Labyrinth *init_labirint(int fd, int file_size) {
 	lab->point.x = -1;
 	lab->point.y = -1;
 	
-	char line[MAX];
+	char line[10];
 	
 	// читаю первую строку файла
-	if ((get_string(fd, line, MAX)) == NULL) {
+	if ((get_string(fd, line, sizeof(line))) == NULL) {
 		free(lab);
 		return NULL;
 	}
@@ -155,7 +153,7 @@ struct Labyrinth *init_labirint(int fd, int file_size) {
 	// записываю размер лабиринта
 	if (sscanf(line, "%d", &lab->size) != 1) {
 		destroy_lab(lab);
-		printf("Invalid string: %s\n", line);
+		fprintf(stderr, "Invalid string: %s\n", line);
 		return NULL;
 	}
 
