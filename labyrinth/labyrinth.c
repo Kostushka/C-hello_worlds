@@ -204,11 +204,11 @@ char *get_row(int fd, int size, int num_line, struct Point *point) {
 		if (i == size) {
 			free(s);
 			// num_line + 2 - отсчет с 0 и 1-ая строка содержит служебную информацию 
-			fprintf(stderr, "line number %d: not enough space to write\n", num_line + 2);
+			fprintf(stderr, "line number %d: line too long\n", num_line + 2);
 			return NULL;
 		}
 				
-		// получить координаты '*'
+		// получить координаты '*' или NULL, если координаты уже были получены
 		if (get_point(point, buf, num_line, i) == NULL) {
 			return NULL;
 		}
@@ -216,7 +216,8 @@ char *get_row(int fd, int size, int num_line, struct Point *point) {
 		s[i++] = buf;
 	}
 
-	if (c == 0) {
+	// провекра, что EOF и в s ничего не записано, так как не во всех файлах есть \n в конце любой строки
+	if (c == 0 && s[0] == 0) {
 		fprintf(stderr, "unexpected EOF\n");
 		return NULL;
 	}
@@ -232,7 +233,7 @@ struct Point *get_point(struct Point *point, int c, int num_line, int num_c) {
 	if (c != '*') {
 		return point;
 	}
-	// проверка, что в строке уже есть '*'
+	// проверка, что в файле уже записаны координаты '*'
 	if (point->x != -1) {
 		// num_line + 2 - отсчет с 0 и 1-ая строка содержит служебную информацию 
 		fprintf(stderr, "file incorrect: more than one '*' in file, second '*' in %d line\n", num_line + 2);
