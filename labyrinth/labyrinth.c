@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#define MAX 10
 
 struct Point {
 	int x;
@@ -19,6 +20,7 @@ struct Labyrinth {
 
 struct Labyrinth *init_labirint(int fd, int file_size);
 char *get_row(int fd, int size, int num_line, struct Point *);
+char *get_string(int fd, char *s, int n);
 void print_lab(struct Labyrinth *);
 struct Labyrinth *load_labyrinth(struct Labyrinth *, int fd, int file_size);
 void destroy_lab(struct Labyrinth *);
@@ -62,6 +64,36 @@ int main(int argc, char *argv[]) {
 	destroy_lab(lab);
 
 	return 0;
+}
+
+char *get_string(int fd, char *s, int n) {
+	char buf;
+	int c, i;
+	i = 0;
+	
+	while ((c = read(fd, &buf, 1)) != 0) {
+		if (c == -1) {
+			perror("read");
+			return NULL;
+		}
+		if (buf == '\n') {
+			s[i] = '\0';
+			break;
+		}
+		s[i++] = buf;
+	}
+
+	if (c == 0) {
+		fprintf(stderr, "file incorrect\n");
+		return NULL;
+	}
+
+	if (i >= n) {
+		fprintf(stderr, "file incorrect\n");
+		return NULL;
+	}
+	
+	return s;
 }
 
 void destroy_lab(struct Labyrinth *lab) {
@@ -112,22 +144,20 @@ struct Labyrinth *init_labirint(int fd, int file_size) {
 	lab->point.x = -1;
 	lab->point.y = -1;
 	
-	char *line;
+	char line[MAX];
 	
 	// читаю первую строку файла
-	if ((line = get_row(fd, 10, 0, &lab->point)) == NULL) {
+	if ((get_string(fd, line, MAX)) == NULL) {
 		free(lab);
 		return NULL;
 	}
 
 	// записываю размер лабиринта
 	if (sscanf(line, "%d", &lab->size) != 1) {
-		free(line);
 		destroy_lab(lab);
 		printf("Invalid string: %s\n", line);
 		return NULL;
 	}
-	free(line);
 
 	// выделяю память под массив указателей на массивы строк == строки двумерного массива
 	// {p, p, p, p}
