@@ -112,6 +112,15 @@ struct Labyrinth *init_labirint(int fd, int file_size) {
 	lab->point.x = -1;
 	lab->point.y = -1;
 
+	// выделяю память под массив указателей на массивы строк == строки двумерного массива
+	// {p, p, p, p}
+	lab->labyrinth = (char **) calloc(lab->size, sizeof(char *));
+	if (lab->labyrinth == NULL) {
+		free(lab);
+		perror("calloc");
+		return NULL;
+	}
+
 	char *line;
 	
 	// читаю первую строку файла
@@ -119,11 +128,15 @@ struct Labyrinth *init_labirint(int fd, int file_size) {
 		return NULL;
 	}
 	// записываю размер лабиринта
-	lab->size = atoi(line);
+	if (sscanf(line, "%d", &lab->size) != 1) {
+		printf("Invalid string: %s\n", line);
+		return NULL;
+	}
 	free(line);
 	
 	// создаю двумерный массив
 	if (load_labyrinth(lab, fd, file_size) == NULL) {
+		destroy_lab(lab);
 		return NULL;
 	}
 
@@ -134,14 +147,6 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 
 	char *line;
 	
-	// выделяю память под массив указателей на массивы строк == строки двумерного массива
-	// {p, p, p, p}
-	lab->labyrinth = (char **) calloc(lab->size, sizeof(char *));
-	if (lab->labyrinth == NULL) {
-		perror("calloc");
-		return NULL;
-	}
-
 	int i;
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
@@ -151,7 +156,6 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 		// проверка строки на EOF: файл меньше заданной размерности
 		if (line == NULL) {
 			fprintf(stderr, "file size is less than matrix size\n");
-			destroy_lab(lab);
 			return NULL;
 		}
 
@@ -163,7 +167,6 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 	// проверка, что координаты '*' получены 
 	if (lab->point.x == -1) {
 		fprintf(stderr, "file incorrect: missing symbol '*'\n");
-		destroy_lab(lab);
 		return NULL;
 	}
 
@@ -171,10 +174,10 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 	int pos = lseek(fd, 0, SEEK_CUR);
 	if (pos == -1) {
 		perror("lseek");
+		return NULL;
 	}
 	if (pos != file_size) {
 		fprintf(stderr, "file size is larger than matrix size\n");
-		destroy_lab(lab);
 		return NULL;
 	}
 	
