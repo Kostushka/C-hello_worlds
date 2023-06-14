@@ -17,18 +17,14 @@ struct Labyrinth {
 	struct Point point;
 };
 
-int parse(struct Labyrinth *, int fd, int file_size);
+struct Labyrinth *init_labirint(int fd, int file_size);
 char *get_row(int fd, int size, int num_line, struct Point *);
-void print_lab(struct Labyrinth);
-char **create_arr(struct Labyrinth *, int fd, int file_size);
+void print_lab(struct Labyrinth *);
+struct Labyrinth *load_labyrinth(struct Labyrinth *, int fd, int file_size);
 void destroy_lab(struct Labyrinth *);
 struct Point *get_point(struct Point *, int c, int num_line, int num_c);
 
-int main(int argc, char *argv[]) {
-	struct Labyrinth lab;
-	lab.point.x = -1;
-	lab.point.y = -1;
-	
+int main(int argc, char *argv[]) {	
 	int fd;
 
 	// проверить корректность параметров программы
@@ -47,9 +43,10 @@ int main(int argc, char *argv[]) {
 	if ((fd = open(argv[1], O_RDONLY, 0)) == -1) {
 		fprintf(stderr, "%s: %s\n", argv[1], strerror(errno));
 	}
-
+	
+	struct Labyrinth *lab;
 	// функция парсинга текстового файла
-	if (parse(&lab, fd, stbuf.st_size) < 0) {
+	if ((lab = init_labirint(fd, stbuf.st_size)) == NULL) {
 		return 1;
 	}
 
@@ -59,10 +56,10 @@ int main(int argc, char *argv[]) {
 	// отрисовать лабиринт
 	print_lab(lab);
 
-	printf("*: {%d; %d}\n", lab.point.x, lab.point.y);
+	printf("*: {%d; %d}\n", lab->point.x, lab->point.y);
 
 	// очистить память, выделенную под лабиринт
-	destroy_lab(&lab);
+	destroy_lab(lab);
 	
 	return 0;
 }
@@ -72,12 +69,13 @@ void destroy_lab(struct Labyrinth *lab) {
 		free(lab->labyrinth[k]);
 	}
 	free(lab->labyrinth);
+	free(lab);
 }
 
-void print_lab(struct Labyrinth lab) {
-	int size = lab.size;
+void print_lab(struct Labyrinth *lab) {
+	int size = lab->size;
 	while (size > 0) {
-		if (size == lab.size) {
+		if (size == lab->size) {
 			printf("+");
 		} 
 		printf("-");
@@ -87,17 +85,17 @@ void print_lab(struct Labyrinth lab) {
 		--size;
 	}
 	putchar('\n');
-	for (int i = 0; i < lab.size; i++) {
+	for (int i = 0; i < lab->size; i++) {
 		printf("|");
-		for (int j = 0; j < lab.size; j++) {
-			printf("%c", lab.labyrinth[i][j]);
+		for (int j = 0; j < lab->size; j++) {
+			printf("%c", lab->labyrinth[i][j]);
 		}
 		printf("|");
 		putchar('\n');
 	}
-	size = lab.size;
+	size = lab->size;
 	while (size > 0) {
-		if (size == lab.size) {
+		if (size == lab->size) {
 			printf("+");
 		} 
 		printf("-");
@@ -109,27 +107,30 @@ void print_lab(struct Labyrinth lab) {
 	putchar('\n');
 }
 
-int parse(struct Labyrinth *lab, int fd, int file_size) {
+struct Labyrinth *init_labirint(int fd, int file_size) {
+	struct Labyrinth *lab = (struct Labyrinth *) malloc(sizeof(struct Labyrinth));
+	lab->point.x = -1;
+	lab->point.y = -1;
 
 	char *line;
 	
 	// читаю первую строку файла
 	if ((line = get_row(fd, 10, 0, &lab->point)) == NULL) {
-		return -1;
+		return NULL;
 	}
 	// записываю размер лабиринта
 	lab->size = atoi(line);
 	free(line);
 	
 	// создаю двумерный массив
-	if (create_arr(lab, fd, file_size) == NULL) {
-		return -1;
+	if (load_labyrinth(lab, fd, file_size) == NULL) {
+		return NULL;
 	}
-	
-	return 0;
+
+	return lab;
 }
 
-char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
+struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 
 	char *line;
 	
@@ -177,7 +178,7 @@ char **create_arr(struct Labyrinth *lab, int fd, int file_size) {
 		return NULL;
 	}
 	
-	return lab->labyrinth;
+	return lab;
 }
 
 char *get_row(int fd, int size, int num_line, struct Point *point) {
@@ -210,6 +211,7 @@ char *get_row(int fd, int size, int num_line, struct Point *point) {
 				
 		// получить координаты '*' или NULL, если координаты уже были получены
 		if (get_point(point, buf, num_line, i) == NULL) {
+			free(s);
 			return NULL;
 		}
 				
@@ -217,7 +219,7 @@ char *get_row(int fd, int size, int num_line, struct Point *point) {
 	}
 
 	// провекра, что EOF и в s ничего не записано, так как не во всех файлах есть \n в конце любой строки
-	if (c == 0 && s[0] == 0) {
+	if (c == 0 && i == 0) {
 		fprintf(stderr, "unexpected EOF\n");
 		return NULL;
 	}
