@@ -17,7 +17,7 @@ int main(void) {
 
 char **create_arr(int a) {
 	// массив указателей на массивы строк
-	char **keytab = (char **) calloc(1, sizeof(char *) * a);
+	char **keytab = (char **) calloc(a, sizeof(char *));
 	int i, j;
 	for (i = 0; i < 5; i++) {
 		// массив строки
