@@ -5,8 +5,10 @@
 
 struct Labyrinth *init_labyrint(int fd, int file_size) {
 	struct Labyrinth *lab = (struct Labyrinth *) malloc(sizeof(struct Labyrinth));
-	lab->point.x = -1;
-	lab->point.y = -1;
+	lab->traveler.x = -1;
+	lab->traveler.y = -1;
+	lab->target.x = -1;
+	lab->target.y = -1;
 
 	char line[10];
 
@@ -49,7 +51,7 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
 	    // читаю строку из файла
-	    line = get_row(fd, lab->size, i, &lab->point);
+	    line = get_row(fd, lab->size, i, &lab->traveler, &lab->target);
 
 	    // проверка строки на EOF: файл меньше заданной размерности
 	    if (line == NULL) {
@@ -63,8 +65,14 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 	}
 
 	// проверка, что координаты '*' получены
-	if (lab->point.x == -1) {
+	if (lab->traveler.x == -1) {
         fprintf(stderr, "file incorrect: missing symbol '*'\n");
+        return NULL;
+	}
+	
+	// проверка, что координаты '+' получены
+	if (lab->target.x == -1) {
+        fprintf(stderr, "file incorrect: missing symbol '+'\n");
         return NULL;
 	}
 

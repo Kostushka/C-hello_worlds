@@ -6,8 +6,8 @@
 #define RIGHT   8       //1000 y > +
 
 int move(struct Labyrinth *lab, int way) {
-	int new_x = lab->point.x;
-	int new_y = lab->point.y;
+	int new_x = lab->traveler.x;
+	int new_y = lab->traveler.y;
 	switch(way) {
 		case UP:
 			// на один указатель назад в массиве указателей 
@@ -39,15 +39,15 @@ int move(struct Labyrinth *lab, int way) {
 	
 	// проверка, что нет препятствий
 	char c = lab->labyrinth[new_y][new_x];
-	if (c != ' ') {
+	if (c != ' ' && c != '+') {
 		fprintf(stderr, "ran into an obstacle\n");
 		return 1;
 	}
 
 	// сдвигаю * на 1 шаг
-	lab->labyrinth[lab->point.y][lab->point.x] = ' ';
-	lab->point.y = new_y;
-	lab->point.x = new_x;
+	lab->labyrinth[lab->traveler.y][lab->traveler.x] = ' ';
+	lab->traveler.y = new_y;
+	lab->traveler.x = new_x;
 	lab->labyrinth[new_y][new_x] = '*';
 	
 	return 0;

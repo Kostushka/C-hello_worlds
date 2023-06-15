@@ -32,7 +32,7 @@ char *get_string(int fd, char *s, int n) {
 	return s;
 }
 
-char *get_row(int fd, int size, int num_line, struct Point *point) {
+char *get_row(int fd, int size, int num_line, struct Point *traveler, struct Point *target) {
 	char *s = (char *) calloc(size, sizeof(char));
 	if (s == NULL) {
 		perror("calloc");
@@ -60,8 +60,8 @@ char *get_row(int fd, int size, int num_line, struct Point *point) {
 			return NULL;
 		}
 
-		// получить координаты '*' или NULL, если координаты уже были получены
-		if (get_point(point, buf, num_line, i) == NULL) {
+		// получить координаты '*' и '+' или NULL, если координаты уже были получены
+		if (get_point(traveler, target, buf, num_line, i) == NULL) {
 			free(s);
 			return NULL;
 		}
@@ -82,17 +82,30 @@ char *get_row(int fd, int size, int num_line, struct Point *point) {
 	return s;
 }
 
-struct Point *get_point(struct Point *point, int c, int num_line, int num_c) {
-	if (c != '*') {
-		return point;
+struct Point *get_point(struct Point *traveler, struct Point *target, int c, int num_line, int num_c) {
+	if (c != '*' && c != '+') {
+		return traveler;
 	}
-	// проверка, что в файле уже записаны координаты '*'
-	if (point->x != -1) {
+	
+	if (c == '*') {
+		// проверка, что в файле уже записаны координаты '*'
+		if (traveler->x != -1) {
+			// num_line + 2 - отсчет с 0 и 1-ая строка содержит служебную информацию
+			fprintf(stderr, "file incorrect: more than one '*' in file, second '*' in %d line\n", num_line + 2);
+			return NULL;
+		}
+		traveler->x = num_c;
+		traveler->y = num_line;
+		return traveler;
+	}
+	
+	// проверка, что в файле уже записаны координаты '+'
+	if (target->x != -1) {
 		// num_line + 2 - отсчет с 0 и 1-ая строка содержит служебную информацию
-		fprintf(stderr, "file incorrect: more than one '*' in file, second '*' in %d line\n", num_line + 2);
+		fprintf(stderr, "file incorrect: more than one '+' in file, second '+' in %d line\n", num_line + 2);
 		return NULL;
 	}
-	point->x = num_c;
-	point->y = num_line;
-	return point;
+	target->x = num_c;
+	target->y = num_line;
+	return target;
 }
