@@ -92,7 +92,7 @@ struct Point *get_point(struct Point *point, int c, int num_line, int num_c) {
 		fprintf(stderr, "file incorrect: more than one '*' in file, second '*' in %d line\n", num_line + 2);
 		return NULL;
 	}
-	point->x = num_line;
-	point->y = num_c;
+	point->x = num_c;
+	point->y = num_line;
 	return point;
 }

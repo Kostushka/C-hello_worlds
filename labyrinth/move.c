@@ -5,87 +5,75 @@
 #define LEFT    4       //0100 y < -
 #define RIGHT   8       //1000 y > +
 
+int move_point(struct Labyrinth *lab, int new_x, int new_y, int z);
+
 int move(struct Labyrinth *lab, int way) {
-	int x = lab->point.x;
-	int y = lab->point.y;
+	int new_x = lab->point.x;
+	int new_y = lab->point.y;
 	switch(way) {
 		case UP:
-			// проверка, движения на одну строку назад
-			x -= 1;
-			// проверка, что не вышли за координатную плоскость
-			if (x < 0 || x >= lab->size) {
-			fprintf(stderr, "out of plane\n");
-			return 1;
-			}
-			// проверка, что нет препятствий
-			char up = lab->labyrinth[x][y];
-			if (up != ' ') {
-				fprintf(stderr, "ran into an obstacle\n");
+			// на одну строку назад
+			new_y -= 1;
+			
+			if (move_point(lab, new_x, new_y, new_y) != 0) {
 				return 1;
 			}
-			// сдвигаю * вверх на 1 шаг
-			lab->point.x -= 1;
-			lab->labyrinth[x][y] = '*';
-			lab->labyrinth[x + 1][y] = ' ';
+			
+			// сдвигаю координаты * вверх на 1 шаг
+			lab->point.y -= 1;
 			break;
 		case DOWN:
-			// проверка, движения на одну строку вперед
-			x += 1;
-			// проверка, что не вышли за координатную плоскость
-			if (x < 0 || x >= lab->size) {
-			fprintf(stderr, "out of plane\n");
-			return 1;
+			// на одну строку вперед
+			new_y += 1;
+
+			if (move_point(lab, new_x, new_y, new_y) != 0) {
+				return 1;
 			}
-			// проверка, что нет препятствий
-			char down = lab->labyrinth[x][y];
-			if (down != ' ') {
-			fprintf(stderr, "ran into an obstacle\n");
-			return 1;
-			}
-			// сдвигаю * вниз на 1 шаг
-			lab->point.x += 1;
-			lab->labyrinth[x][y] = '*';
-			lab->labyrinth[x - 1][y] = ' ';
+			
+			// сдвигаю координаты * вниз на 1 шаг
+			lab->point.y += 1;
 			break;
 		case LEFT:
-			// проверка, движения в строке на один символ влево
-			y -= 1;
-			// проверка, что не вышли за координатную плоскость
-			if (y < 0 || y >= lab->size) {
-			fprintf(stderr, "out of plane\n");
-			return 1;
-			}
-			// проверка, что нет препятствий
-			char left = lab->labyrinth[x][y];
-			if (left != ' ') {
-			fprintf(stderr, "ran into an obstacle\n");
-			return 1;
-			}
-			// сдвигаю * влево на 1 шаг
-			lab->point.y -= 1;
-			lab->labyrinth[x][y] = '*';
-			lab->labyrinth[x][y + 1] = ' ';
+			// на один символ влево в строке
+			new_x -= 1;
+
+			if (move_point(lab, new_x, new_y, new_x) != 0) {
+				return 1;
+			}			
+			
+			// сдвигаю координаты * влево на 1 шаг
+			lab->point.x -= 1;
 			break;
 		case RIGHT:
-			// проверка, движения в строке на один символ вправо
-			y += 1;
-			// проверка, что не вышли за координатную плоскость
-			if (y < 0 || y > lab->size) {
-			fprintf(stderr, "out of plane\n");
-			return 1;
+			// на один символ вправо в строке
+			new_x += 1;
+
+			if (move_point(lab, new_x, new_y, new_x) != 0) {
+				return 1;
 			}
-			// проверка, что нет препятствий
-			char right = lab->labyrinth[x][y];
-			if (right != ' ') {
-			fprintf(stderr, "ran into an obstacle\n");
-			return 1;
-			}
-			// сдвигаю * вправо на 1 шаг
-			lab->point.y += 1;
-			lab->labyrinth[x][y] = '*';
-			lab->labyrinth[x][y - 1] = ' ';
+
+			// сдвигаю координаты * вправо на 1 шаг
+			lab->point.x += 1;
 			break;
 	}
 	return 0;
 }
 
+int move_point(struct Labyrinth *lab, int new_x, int new_y, int z) {	
+	// проверка, что не вышли за координатную плоскость
+	if (z < 0 || z >= lab->size) {
+		fprintf(stderr, "out of plane\n");
+		return 1;
+	}
+	// проверка, что нет препятствий
+	char up = lab->labyrinth[new_y][new_x];
+	if (up != ' ') {
+		fprintf(stderr, "ran into an obstacle\n");
+		return 1;
+	}
+	// сдвигаю * на 1 шаг
+	lab->labyrinth[lab->point.y][lab->point.x] = ' ';
+	lab->labyrinth[new_y][new_x] = '*';
+	
+	return 0;
+}
