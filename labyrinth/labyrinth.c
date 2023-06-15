@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 	printf("*: {%d; %d}\n", lab->point.x, lab->point.y);
 
 	// перемещение по лабиринту
-	if (move(lab, RIGHT) != 0) {
+	if (move(lab, DOWN) != 0) {
 		destroy_lab(lab);
 		return 1;
 	}
