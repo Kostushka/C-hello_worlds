@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include "labyrinth.h"
-#define UP      1       //0001 x ^ -
-#define DOWN    2       //0010 x v +
-#define LEFT    4       //0100 y < -
-#define RIGHT   8       //1000 y > +
+#define UP      1       //0001 y ^ -
+#define DOWN    2       //0010 y v +
+#define LEFT    4       //0100 x < -
+#define RIGHT   8       //1000 x > +
 
 int move(struct Labyrinth *lab, int way) {
 	int new_x = lab->traveler.x;

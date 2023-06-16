@@ -7,11 +7,6 @@
 #include <sys/stat.h>
 #include "labyrinth.h"
 
-#define UP 		1 	//0001 x ^ -
-#define DOWN 	2 	//0010 x v +
-#define LEFT 	4 	//0100 y < -
-#define RIGHT 	8 	//1000 y > +
-
 int main(int argc, char *argv[]) {	
 	int fd;
 
@@ -46,123 +41,25 @@ int main(int argc, char *argv[]) {
 	printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
 	printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
 
-	// получить размер файла с командами
-	struct stat stbuf_command;
-	if (stat(argv[2], &stbuf_command) == -1) {
-		fprintf(stderr, "%s: %s\n", argv[2], strerror(errno));
-	}
-
+	FILE *fp;
 	// открыть файл с командами
-	if ((fd = open(argv[2], O_RDONLY, 0)) == -1) {
+	if ((fp = fopen(argv[2], "r")) == NULL) {
 		fprintf(stderr, "%s: %s\n", argv[2], strerror(errno));
 	}
 
-	struct Command *command;
-	int pos = 0;
-	int success = 0;
-
-	while (pos != stbuf_command.st_size) {		
-		// функция парсинга строки из файла команд в структуру для команды
-		if ((command = init_command(fd)) == NULL) {
-			destroy_lab(lab);
-			return 1;
-		}
-		
-		int flag;
-		switch(command->flag) {
-			case 'U': 
-				flag = UP;
-				break;
-			case 'D':
-				flag = DOWN;
-				break;
-			case 'L':
-				flag = LEFT;
-				break;
-			case 'R':
-				flag = RIGHT;
-				break;
-		}
-	
-		// перемещение по лабиринту
-		while (command->num > 0){
-			if (move(lab, flag) != 0) {
-				free(command);
-				destroy_lab(lab);
-				return 1;
-			}
-			if (lab->traveler.x == lab->target.x && lab->traveler.y == lab->target.y) {
-				success = 1;
-			}
-			--command->num;
-		}
-	
-		// отрисовать лабиринт
-		print_lab(lab);
-		printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-		printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
-		
-		pos = lseek(fd, 0, SEEK_CUR);
-		if (pos == -1) {
-			destroy_lab(lab);
-			free(command);
-			perror("lseek");
-			return 1;
-		}
-		// очистить память, выделенную под структуру команд
-		free(command);
-	}
-	if (!success) {
-		printf("FAIL!\n");
-	} else {
-		printf("SUCCESS!\n");
+	// функция обработки файла команд
+	if (load_command(fp, lab) == NULL) {
+		destroy_lab(lab);
+		return 1;
 	}
 
 	// закрыть файл с командами
-	close(fd);
+	fclose(fp);
 	
 	// очистить память, выделенную под лабиринт
 	destroy_lab(lab);
 
 	return 0;
-}
-
-struct Command *init_command(int fd) {
-	// создать структуру для команды
-	struct Command *command = (struct Command *) malloc(sizeof(struct Command));
-	command->num = -1;
-	command->flag = -1;
-
-	// распарсить строку из файла команд в структуру для команды
-	char buf;
-	int i, n;
-	i = n = 0;
-	while ((n = read(fd, &buf, 1)) != 0) {
-		if (n == -1) {
-			free(command);
-			perror("read");
-			return NULL;
-		}
-		if (buf == '\n') {
-			break;
-		}
-		if (buf == ' ') {
-			continue;
-		}
-		if (i == 0) {
-			command->num = buf - '0';
-		} else {
-			command->flag = buf;
-		}
-		++i;
-	}
-
-	if (command->num == -1 || command->flag == -1) {
-		free(command);
-		return NULL;
-	}
-
-	return command;
 }
 
 void destroy_lab(struct Labyrinth *lab) {
