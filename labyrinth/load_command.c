@@ -70,36 +70,48 @@ int init_command(FILE *fp, struct Command *command) {
 		return EOF;		
 	}
 	// проверить, что считанная строка корректна: есть \n
-	char flag = 0;
-	for (unsigned int i = 0; i < sizeof(str); i++) {
+	for (int i = 0; i < sizeof(str); i++) {
 		if (str[i] == '\n') {
-			flag = 1;
-			break;
+			goto full_line;
 		}
 	}
-	if (!flag) {
-		fprintf(stderr, "error read command\n");
-		return 1;
-	}
+	// \n не было найдено в считанной строке
+	fprintf(stderr, "error read command\n");
+	return 1;
+
+	full_line:
+
 	char buf[64];
 	
 	// распарсить строку в структуру для команды
 	int n = sscanf(str, "%s %d", buf, &command->num);
 
-	// если число пропущено, кол-во команд по умолчанию: 1
-	if (command->num == 0) {
-		// проверка на корректность команды
-		char error_str[64];
-		if (sscanf(str, "%s %s", error_str, error_str) == 2) {
-			printf("error read command: %s\n", error_str);
-			return 1;
-		}
-		command->num = 1;
-	}
-	
 	if (n != 2 && n != 1) {
 		fprintf(stderr, "error read command\n");
 		return 1;
+	}
+	
+	// если число пропущено, кол-во команд по умолчанию: 1
+	if (command->num == 0) {
+		// проверка на корректность команды
+		static char first_str[32];
+		static char second_str[32];
+		int num;
+		if (sscanf(str, "%s %s", first_str, second_str) == 2) {
+			if (second_str[0] != 0) {
+				if (sscanf(second_str, "%d", &num) != 1) {
+					printf("error read command: %s\n", second_str);
+					return 1;
+				}
+			}
+		}
+		command->num = 1;
+	}
+
+	// проверка, что число команды положительно
+	if (command->num < 0) {
+		printf("error read command\n");
+		return 1;	
 	}
 
 	// проверка, записаны ли данные команды в строку
@@ -120,7 +132,7 @@ int init_command(FILE *fp, struct Command *command) {
 	}
 
 	// проверка, что команды записаны в структуру
-	if (command->flag == -1 || command->num == -1) {
+	if (command->flag == -1) {
 		fprintf(stderr, "command data not received\n");
 		return 1;
 	}
