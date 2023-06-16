@@ -70,41 +70,61 @@ int init_command(FILE *fp, struct Command *command) {
 		return EOF;		
 	}
 	// проверить, что считанная строка корректна: есть \n
-	for (int i = 0; i < sizeof(str); i++) {
+	for (int i = 0;; i++) {
+		if (i == sizeof(str)) {
+			// \n не было найдено в считанной строке
+			fprintf(stderr, "error read command\n");
+			return 1;
+		}
 		if (str[i] == '\n') {
-			goto full_line;
+			break;
 		}
 	}
-	// \n не было найдено в считанной строке
-	fprintf(stderr, "error read command\n");
-	return 1;
 
-	full_line:
+	// 64 - \n - \0 = 62 байта строки команды
+	char command_buf[61]; // 60 байт + \0
+	char num_buf[3]; // 2 байта + \0
 
-	char buf[64];
+	int i, k;
+	for (i = 0; i < 64; i++) {
+		// если буфер переполнен: ошибка
+		if (sizeof(command_buf) == i) {
+			fprintf(stderr, "error read command\n");
+			return 1;
+		}
+		if (str[i] != ' ') {
+			command_buf[i] = str[i];
+		} else {
+			command_buf[i] = '\0';
+			break;
+		}
+	}
+
+	// пропустили пробел
+	++i;
 	
-	// распарсить строку в структуру для команды
-	int n = sscanf(str, "%s %d", buf, &command->num);
+	for (k = 0; i < 64; i++, k++) {
+		// если буфер переполнен: ошибка
+		if (sizeof(num_buf) == k) {
+			fprintf(stderr, "error read command\n");
+			return 1;
+		}
+		if (str[i] != '\n' && str[i] != ' ') {
+			num_buf[k] = str[i]; 
+		} else {
+			num_buf[k] = '\0';
+			break;
+		}
+	}
 
-	if (n != 2 && n != 1) {
+	// если буфер с числом непустой, распарсить в структуру для команды
+	if (k > 0 && sscanf(num_buf, "%d", &command->num) != 1) {
 		fprintf(stderr, "error read command\n");
 		return 1;
 	}
-	
-	// если число пропущено, кол-во команд по умолчанию: 1
-	if (command->num == 0) {
-		// проверка на корректность команды
-		static char first_str[32];
-		static char second_str[32];
-		int num;
-		if (sscanf(str, "%s %s", first_str, second_str) == 2) {
-			if (second_str[0] != 0) {
-				if (sscanf(second_str, "%d", &num) != 1) {
-					printf("error read command: %s\n", second_str);
-					return 1;
-				}
-			}
-		}
+
+	// если буфер с числом пуст, кол-во команд по умолчанию: 1
+	if (k == 0) {
 		command->num = 1;
 	}
 
@@ -114,20 +134,14 @@ int init_command(FILE *fp, struct Command *command) {
 		return 1;	
 	}
 
-	// проверка, записаны ли данные команды в строку
-	if (buf[0] == 0) {
-		fprintf(stderr, "command data not received\n");
-		return 1;
-	}
-
 	// записываю команду в структуру
-	if (strcmp(buf, "UP") == 0) {
+	if (strcmp(command_buf, "UP") == 0) {
 		command->flag = UP;
-	} else if (strcmp(buf, "DOWN") == 0) {
+	} else if (strcmp(command_buf, "DOWN") == 0) {
 		command->flag = DOWN;
-	} else if (strcmp(buf, "LEFT") == 0) {
+	} else if (strcmp(command_buf, "LEFT") == 0) {
 		command->flag = LEFT;
-	} else if (strcmp(buf, "RIGHT") == 0){
+	} else if (strcmp(command_buf, "RIGHT") == 0){
 		command->flag = RIGHT;
 	}
 
