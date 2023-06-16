@@ -18,11 +18,10 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 
 	int success = 0;
 
-	while (feof(fp) == 0) {
+	while (1) {
 
 		// функция парсинга строки из файла команд в структуру команды
-		int init;
-		init = init_command(fp, command);
+		int init = init_command(fp, command);
 		if (init != 0) {
 			if (init == EOF) {
 				break;
@@ -83,13 +82,21 @@ int init_command(FILE *fp, struct Command *command) {
 		return 1;
 	}
 	char buf[64];
+	
 	// распарсить строку в структуру для команды
 	int n = sscanf(str, "%s %d", buf, &command->num);
 
 	// если число пропущено, кол-во команд по умолчанию: 1
 	if (command->num == 0) {
+		// проверка на корректность команды
+		char error_str[64];
+		if (sscanf(str, "%s %s", error_str, error_str) == 2) {
+			printf("error read command: %s\n", error_str);
+			return 1;
+		}
 		command->num = 1;
 	}
+	
 	if (n != 2 && n != 1) {
 		fprintf(stderr, "error read command\n");
 		return 1;

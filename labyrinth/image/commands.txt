@@ -1,3 +1,3 @@
 RIGHT 5
 DOWN 5
-LEFT 3
+LEFT            
