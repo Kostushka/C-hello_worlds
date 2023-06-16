@@ -17,7 +17,7 @@ struct Labyrinth {
 	struct Point target;
 };
 
-struct Command *init_command(FILE *fp, struct Command *);
+int init_command(FILE *fp, struct Command *);
 void *load_command(FILE *fp, struct Labyrinth *);
 char *get_row(int fd, int size, int num_line, struct Point *, struct Point *);
 char *get_string(int fd, char *s, int n);

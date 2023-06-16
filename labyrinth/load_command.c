@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "labyrinth.h"
 
 #define UP      1       //0001 y ^ -
@@ -20,7 +21,12 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 	while (feof(fp) == 0) {
 
 		// функция парсинга строки из файла команд в структуру команды
-		if (init_command(fp, command) == NULL) {
+		int init;
+		init = init_command(fp, command);
+		if (init != 0) {
+			if (init == EOF) {
+				break;
+			}
 			free(command);
 			return NULL;
 		}
@@ -54,42 +60,63 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 	free(command);
 }
 
-struct Command *init_command(FILE *fp, struct Command *command) {
-	char str[100];
-	// распарсить строку из файла команд в структуру для команды
-	int n = fscanf(fp, "%s %d\n", str, &command->num);
-	
+int init_command(FILE *fp, struct Command *command) {
+	char str[64];
+	// считать из файла команд строку до \n или не больше 64 байт
+	if (fgets(str, sizeof(str), fp) == NULL) {
+		if (errno) {
+			perror("fgets");
+			return 1;
+		}
+		return EOF;		
+	}
+	// проверить, что считанная строка корректна: есть \n
+	char flag = 0;
+	for (unsigned int i = 0; i < sizeof(str); i++) {
+		if (str[i] == '\n') {
+			flag = 1;
+			break;
+		}
+	}
+	if (!flag) {
+		fprintf(stderr, "error read command\n");
+		return 1;
+	}
+	char buf[64];
+	// распарсить строку в структуру для команды
+	int n = sscanf(str, "%s %d", buf, &command->num);
+
 	// если число пропущено, кол-во команд по умолчанию: 1
 	if (command->num == 0) {
 		command->num = 1;
 	}
 	if (n != 2 && n != 1) {
 		fprintf(stderr, "error read command\n");
-		return NULL;
+		return 1;
 	}
 
 	// проверка, записаны ли данные команды в строку
-	if (str[0] == 0) {
+	if (buf[0] == 0) {
 		fprintf(stderr, "command data not received\n");
-		return NULL;
+		return 1;
 	}
 
 	// записываю команду в структуру
-	if (strcmp(str, "UP") == 0) {
+	if (strcmp(buf, "UP") == 0) {
 		command->flag = UP;
-	} else if (strcmp(str, "DOWN") == 0) {
+	} else if (strcmp(buf, "DOWN") == 0) {
 		command->flag = DOWN;
-	} else if (strcmp(str, "LEFT") == 0) {
+	} else if (strcmp(buf, "LEFT") == 0) {
 		command->flag = LEFT;
-	} else if (strcmp(str, "RIGHT") == 0){
+	} else if (strcmp(buf, "RIGHT") == 0){
 		command->flag = RIGHT;
 	}
 
 	// проверка, что команды записаны в структуру
 	if (command->flag == -1 || command->num == -1) {
 		fprintf(stderr, "command data not received\n");
-		return NULL;
+		return 1;
 	}
 
-	return command;
+	return 0;
 }
