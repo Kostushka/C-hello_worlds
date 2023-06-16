@@ -14,13 +14,11 @@ struct Labyrinth *init_labyrint(int fd, int file_size) {
 
 	// читаю первую строку файла
 	if ((get_string(fd, line, sizeof(line))) == NULL) {
-        free(lab);
         return NULL;
 	}
 
 	// записываю размер лабиринта
 	if (sscanf(line, "%d", &lab->size) != 1) {
-        destroy_lab(lab);
         fprintf(stderr, "Invalid string: %s\n", line);
         return NULL;
 	}
@@ -29,14 +27,12 @@ struct Labyrinth *init_labyrint(int fd, int file_size) {
 	// {p, p, p, p}
 	lab->labyrinth = (char **) calloc(lab->size, sizeof(char *));
 	if (lab->labyrinth == NULL) {
-        free(lab);
         perror("calloc");
         return NULL;
 	}
 
 	// создаю двумерный массив
 	if (load_labyrinth(lab, fd, file_size) == NULL) {
-        destroy_lab(lab);
         return NULL;
 	}
 

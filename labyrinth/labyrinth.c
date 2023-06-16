@@ -20,16 +20,20 @@ int main(int argc, char *argv[]) {
 	struct stat stbuf;
 	if (stat(argv[1], &stbuf) == -1) {
 		fprintf(stderr, "%s: %s\n", argv[1], strerror(errno));
+		return 1;
 	}
 
 	// открыть файл конфигурации
 	if ((fd = open(argv[1], O_RDONLY, 0)) == -1) {
 		fprintf(stderr, "%s: %s\n", argv[1], strerror(errno));
+		return 1;
 	}
 	
 	struct Labyrinth *lab;
 	// функция парсинга текстового файла
 	if ((lab = init_labyrint(fd, stbuf.st_size)) == NULL) {
+		destroy_lab(lab);
+		close(fd);
 		return 1;
 	}
 
@@ -45,11 +49,14 @@ int main(int argc, char *argv[]) {
 	// открыть файл с командами
 	if ((fp = fopen(argv[2], "r")) == NULL) {
 		fprintf(stderr, "%s: %s\n", argv[2], strerror(errno));
+		destroy_lab(lab);
+		return 1;
 	}
 
 	// функция обработки файла команд
 	if (load_command(fp, lab) == NULL) {
 		destroy_lab(lab);
+		fclose(fp);
 		return 1;
 	}
 
