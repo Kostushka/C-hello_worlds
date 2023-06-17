@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include "labyrinth.h"
+#define BUFSIZE 64
 
 #define UP      1       //0001 y ^ -
 #define DOWN    2       //0010 y v +
@@ -60,8 +61,8 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 }
 
 int init_command(FILE *fp, struct Command *command) {
-	char str[64];
-	// считать из файла команд строку до \n или не больше 64 байт
+	char str[BUFSIZE];
+	// считать из файла команд строку до \n или не больше BUFSIZE (64 байт)
 	if (fgets(str, sizeof(str), fp) == NULL) {
 		if (errno) {
 			perror("fgets");
@@ -81,50 +82,31 @@ int init_command(FILE *fp, struct Command *command) {
 		}
 	}
 
-	// 64 - \n - \0 = 62 байта строки команды
-	char command_buf[61]; // 60 байт + \0
-	char num_buf[3]; // 2 байта + \0
+	char command_buf[BUFSIZE];
+	char num_buf[BUFSIZE];
 
-	int i, k;
-	for (i = 0; i < 64; i++) {
-		// если буфер переполнен: ошибка
-		if (sizeof(command_buf) == i) {
-			fprintf(stderr, "error read command\n");
-			return 1;
-		}
-		if (str[i] != ' ') {
-			command_buf[i] = str[i];
-		} else {
-			command_buf[i] = '\0';
-			break;
-		}
+	// инициализировать массив 0
+	for (int i = 0; i < BUFSIZE; i++) {
+		command_buf[i] = 0;
+		num_buf[i] = 0;
 	}
 
-	// пропустили пробел
-	++i;
-	
-	for (k = 0; i < 64; i++, k++) {
-		// если буфер переполнен: ошибка
-		if (sizeof(num_buf) == k) {
-			fprintf(stderr, "error read command\n");
-			return 1;
-		}
-		if (str[i] != '\n' && str[i] != ' ') {
-			num_buf[k] = str[i]; 
-		} else {
-			num_buf[k] = '\0';
-			break;
-		}
-	}
-
-	// если буфер с числом непустой, распарсить в структуру для команды
-	if (k > 0 && sscanf(num_buf, "%d", &command->num) != 1) {
+	// считываю строку в буфер под название команды и в буфер под число
+	int n = sscanf(str, "%s %s", command_buf, num_buf);
+	if (n != 2 && n != 1) {
 		fprintf(stderr, "error read command\n");
 		return 1;
 	}
-
-	// если буфер с числом пуст, кол-во команд по умолчанию: 1
-	if (k == 0) {
+	
+	// если буфер с числом не пуст
+	if (num_buf[0] != 0) {
+		// проверка, что в буфере число
+		if (sscanf(num_buf, "%d", &command->num) != 1) {
+			fprintf(stderr, "error read command\n");
+			return 1;
+		}
+	} else {
+		// кол-во команд по умолчанию: 1
 		command->num = 1;
 	}
 
