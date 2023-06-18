@@ -85,29 +85,25 @@ int init_command(FILE *fp, struct Command *command) {
 	char command_buf[BUFSIZE];
 	char num_buf[BUFSIZE];
 
-	// инициализировать массив 0
-	for (int i = 0; i < BUFSIZE; i++) {
-		command_buf[i] = 0;
-		num_buf[i] = 0;
-	}
-
 	// считываю строку в буфер под название команды и в буфер под число
 	int n = sscanf(str, "%s %s", command_buf, num_buf);
-	if (n != 2 && n != 1) {
-		fprintf(stderr, "error read command\n");
-		return 1;
-	}
-	
-	// если буфер с числом не пуст
-	if (num_buf[0] != 0) {
-		// проверка, что в буфере число
-		if (sscanf(num_buf, "%d", &command->num) != 1) {
-			fprintf(stderr, "error read command\n");
+
+	switch(n) {
+		// если буфер с числом не пуст
+		case 2: 
+			// проверка, что в буфере число
+			if (sscanf(num_buf, "%d", &command->num) != 1) {
+				fprintf(stderr, "error read command\n");
+				return 1;
+			}
+			break;
+		case 1:
+		 	// кол-во команд по умолчанию: 1
+		 	command->num = 1;
+		 	break;
+		 default:
+		 	fprintf(stderr, "error read command\n");
 			return 1;
-		}
-	} else {
-		// кол-во команд по умолчанию: 1
-		command->num = 1;
 	}
 
 	// проверка, что число команды положительно

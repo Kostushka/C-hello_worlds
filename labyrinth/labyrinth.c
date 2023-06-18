@@ -32,7 +32,6 @@ int main(int argc, char *argv[]) {
 	struct Labyrinth *lab;
 	// функция парсинга текстового файла
 	if ((lab = init_labyrint(fd, stbuf.st_size)) == NULL) {
-		destroy_lab(lab);
 		close(fd);
 		return 1;
 	}

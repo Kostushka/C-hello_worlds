@@ -33,6 +33,7 @@ struct Labyrinth *init_labyrint(int fd, int file_size) {
 
 	// создаю двумерный массив
 	if (load_labyrinth(lab, fd, file_size) == NULL) {
+		destroy_lab(lab);
         return NULL;
 	}
 
