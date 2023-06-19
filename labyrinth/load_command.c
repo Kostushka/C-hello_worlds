@@ -106,10 +106,10 @@ int init_command(FILE *fp, struct Command *command) {
 			return 1;
 	}
 
-	// проверка, что число команды положительно
-	if (command->num < 0) {
+	// количество выполнений команды не может быть меньше единицы 
+	if (command->num < 1) {
 		printf("error read command\n");
-		return 1;	
+		return 1;
 	}
 
 	// записываю команду в структуру
@@ -121,13 +121,10 @@ int init_command(FILE *fp, struct Command *command) {
 		command->flag = LEFT;
 	} else if (strcmp(command_buf, "RIGHT") == 0){
 		command->flag = RIGHT;
-	}
-
-	// проверка, что команды записаны в структуру
-	if (command->flag == -1) {
+	} else {
 		fprintf(stderr, "command data not received\n");
 		return 1;
 	}
-
-	return 0;
+	
+	return 0;	
 }
