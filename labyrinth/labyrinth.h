@@ -1,8 +1,10 @@
 #include <stdio.h>
 
 struct Command {
+	int mode;
+	char *print;
 	int num;
-	char flag;
+	char direction;
 };
 
 struct Point {

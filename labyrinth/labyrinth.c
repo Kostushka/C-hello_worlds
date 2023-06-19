@@ -40,9 +40,9 @@ int main(int argc, char *argv[]) {
 	close(fd);
 
 	// отрисовать лабиринт
-	print_lab(lab);
-	printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-	printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
+	// print_lab(lab);
+	// printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
+	// printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
 
 	FILE *fp;
 	// открыть файл с командами

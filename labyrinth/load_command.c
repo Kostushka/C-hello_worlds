@@ -5,22 +5,29 @@
 #include "labyrinth.h"
 #define BUFSIZE 64
 
-#define UP      1       //0001 y ^ -
-#define DOWN    2       //0010 y v +
-#define LEFT    4       //0100 x < -
-#define RIGHT   8       //1000 x > +
+#define UP                  1   //0001 y ^ -
+#define DOWN                2   //0010 y v +
+#define LEFT                4   //0100 x < -
+#define RIGHT               8   //1000 x > +
+
+#define EACH_STEP          16   //00010000
+#define ERROR              32   //00100000
+#define CHANGE_DIRECTION   64   //01000000
+#define TARGET            128   //10000000
 
 void *load_command(FILE *fp, struct Labyrinth *lab) {
 
 	// создать структуру для команды
-	struct Command *command = (struct Command *) malloc(sizeof(struct Command));  
+	struct Command *command = (struct Command *) malloc(sizeof(struct Command));
+	command->mode = -1;
+	command->print = "PRINT_ON"; 
 	command->num = -1;
-	command->flag = -1;
+	command->direction = -1;
 
 	int success = 0;
 
 	while (1) {
-
+		char prev_direction = command->direction;
 		// функция парсинга строки из файла команд в структуру команды
 		int init = init_command(fp, command);
 		if (init != 0) {
@@ -30,24 +37,42 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 			free(command);
 			return NULL;
 		}
+		if (prev_direction != -1 && prev_direction != command->direction) {
+			if (command->mode == CHANGE_DIRECTION) {
+				print_lab(lab);
+				printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
+				printf("+: {%d; %d}\n", lab->target.x, lab->target.y);		
+			}
+		}
 
 		// выполнение команды: перемещение по лабиринту
 		while (command->num > 0) {
-			if (move(lab, command->flag) != 0) {
+			if (move(lab, command->direction) != 0) {
+				if (command->mode == ERROR) {
+					print_lab(lab);
+					printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
+					printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
+				}
 				free(command);
 				return NULL;
 			}
 			if (lab->traveler.x == lab->target.x && lab->traveler.y == lab->target.y) {
-			success = 1;
+				success = 1;
+				if (command->mode == TARGET) {
+					print_lab(lab);
+					printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
+					printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
+				}
 			}
 			--command->num;
 		}
 
-		// отрисовать лабиринт
-		print_lab(lab);
-		printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-		printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
-
+		// отрисовать лабиринт на каждом шаге
+		if (command->mode == EACH_STEP) {
+			print_lab(lab);
+			printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
+			printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
+		}
 	}
 
 	if (!success) {
@@ -70,6 +95,7 @@ int init_command(FILE *fp, struct Command *command) {
 		}
 		return EOF;		
 	}
+
 	// проверить, что считанная строка корректна: есть \n
 	for (int i = 0;; i++) {
 		if (i == sizeof(str)) {
@@ -83,16 +109,40 @@ int init_command(FILE *fp, struct Command *command) {
 	}
 
 	char command_buf[BUFSIZE];
-	char num_buf[BUFSIZE];
+	char arg_buf[BUFSIZE];
 
-	// считываю строку в буфер под название команды и в буфер под число
-	int n = sscanf(str, "%s %s", command_buf, num_buf);
+	// считываю строку в буфер под название команды и в буфер под аргумент команды
+	int n = sscanf(str, "%s %s", command_buf, arg_buf);
+
+	// если считанная строка - команда режима печати
+	if (strcmp(command_buf, command->print) == 0) {
+		// второй буфер не должен быть пустым
+		if (n != 2) {
+			fprintf(stderr, "error read command\n");
+			return 1;
+		}
+
+		// записываю режим печати в структуру
+		if (strcmp(arg_buf, "each_step") == 0) {
+			command->mode = EACH_STEP;
+		} else if (strcmp(arg_buf, "error") == 0) {
+			command->mode = ERROR;
+		} else if (strcmp(arg_buf, "change_direction") == 0) {
+			command->mode = CHANGE_DIRECTION;
+		} else if (strcmp(arg_buf, "target") == 0) {
+			command->mode = TARGET;
+		} else {
+			fprintf(stderr, "error read print mode\n");
+			return 1;
+		}		
+		return 0;
+	}
 
 	switch(n) {
 		// если буфер с числом не пуст
 		case 2: 
 			// проверка, что в буфере число
-			if (sscanf(num_buf, "%d", &command->num) != 1) {
+			if (sscanf(arg_buf, "%d", &command->num) != 1) {
 				fprintf(stderr, "error read command\n");
 				return 1;
 			}
@@ -114,13 +164,13 @@ int init_command(FILE *fp, struct Command *command) {
 
 	// записываю команду в структуру
 	if (strcmp(command_buf, "UP") == 0) {
-		command->flag = UP;
+		command->direction = UP;
 	} else if (strcmp(command_buf, "DOWN") == 0) {
-		command->flag = DOWN;
+		command->direction = DOWN;
 	} else if (strcmp(command_buf, "LEFT") == 0) {
-		command->flag = LEFT;
+		command->direction = LEFT;
 	} else if (strcmp(command_buf, "RIGHT") == 0){
-		command->flag = RIGHT;
+		command->direction = RIGHT;
 	} else {
 		fprintf(stderr, "command data not received\n");
 		return 1;
