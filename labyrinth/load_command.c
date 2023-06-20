@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 #include "labyrinth.h"
 #define BUFSIZE 64
@@ -100,14 +101,14 @@ int init_command(FILE *fp, struct Command *command) {
 	char command_name[BUFSIZE];
 	int n = sscanf(command_buf, "%s", command_name);
 	if (n != 1) {
-		fprintf(stderr, "error read command\n");
+		fprintf(stderr, "error read command name\n");
 		return 1;
 	}
 
 	// посчитать кол-во аргументов команды
 	int count_args = word_count(command_buf) - 1;
-	if (count_args < 1) {
-		fprintf(stderr, "error read command\n");
+	if (count_args < 0) {
+		fprintf(stderr, "incorrect number of args\n");
 		return 1;
 	}
 
@@ -116,33 +117,33 @@ int init_command(FILE *fp, struct Command *command) {
 	if (command_args == NULL) {
 		return 1;
 	}
-	
+
 	// если считанная строка - команда режима печати
 	if (strcmp(command_name, "PRINT_ON") == 0) {
 		if (print_command(command, command_args) != 0) {
-			destroy_args(command_args);
+			destroy_args(command_args, count_args);
 			return 1;
 		}
-		destroy_args(command_args);
+		destroy_args(command_args, count_args);
 		return 0;
 	}
 
 	// если нет аргументов, кол-во выполнений команды по умолчанию: 1
-	if (command_args[0] == NULL) {
+	if (count_args == 0) {
 		command->num = 1;
 	} else {
 		// проверка, что в буфере аргумента число
 		if (sscanf(command_args[0], "%d", &command->num) != 1) {
-			fprintf(stderr, "error read command\n");
-			destroy_args(command_args);
+			fprintf(stderr, "arg is not a number\n");
+			destroy_args(command_args, count_args);
 			return 1;
 		}	
 	}
 
-	// количество выполнений команды не может быть меньше единицы 
+	// количество выполнения команды не может быть меньше единицы 
 	if (command->num < 1) {
-		printf("error read command\n");
-		destroy_args(command_args);
+		printf("number of commands executed is less than 1\n");
+		destroy_args(command_args, count_args);
 		return 1;
 	}
 
@@ -157,11 +158,11 @@ int init_command(FILE *fp, struct Command *command) {
 		command->direction = RIGHT;
 	} else {
 		fprintf(stderr, "command data not received\n");
-		destroy_args(command_args);
+		destroy_args(command_args, count_args);
 		return 1;
 	}
 	
-	destroy_args(command_args);
+	destroy_args(command_args, count_args);
 	return 0;	
 }
 
@@ -183,7 +184,7 @@ int print_command(struct Command *command, char **command_args) {
 }
 
 int get_command(FILE *fp, char *buf) {
-	// считать из файла команд строку до \n или не больше BUFSIZE (64 байт)
+	// считать из файла команд строку до \n или EOF или не больше BUFSIZE (64 байт)
 	if (fgets(buf, BUFSIZE, fp) == NULL) {
 		if (errno) {
 			perror("fgets");
@@ -191,7 +192,10 @@ int get_command(FILE *fp, char *buf) {
 		}
 		return EOF;		
 	}
-
+	// проверить, что считанная строка корректна: есть EOF
+	if (feof(fp)) {
+		return 0;
+	}
 	// проверить, что считанная строка корректна: есть \n
 	for (int i = 0;; i++) {
 		if (i == BUFSIZE) {
@@ -200,25 +204,25 @@ int get_command(FILE *fp, char *buf) {
 			return 1;
 		}
 		if (buf[i] == '\n') {
-			break;
+			return 0;
 		}
 	}	
-	return 0;
 }
 
 int word_count(char *buf) {
-	int count, state;
-	count = state = 0;
+	int count, state, in, out;
+	count = state = out = 0;
+	in = 1;
 	
 	while (*buf != '\0') {
 		// инкрементируем счетчик, если пробельный символ идет после слова
-		if (*buf == ' ' || *buf == '\n') {
-			if (state == 1) {
+		if (*buf == ' ' || *buf == '\t' || *buf == '\n') {
+			if (state == in) {
 				++count;
-				state = 0;
+				state = out;
 			}
 		} else {
-			state = 1;
+			state = in;
 		}	
 		
 		++buf;
@@ -237,19 +241,28 @@ char **write_args(char *buf, int count_args) {
 	
 	int i, j, k;
 	// пропускаем имя команды
-	for (j = 0; buf[j] != ' '; j++);
-	++j;
+	for (j = 0; !isspace(buf[j]); j++);
+	for (; isspace(buf[j]); j++);
+	
+	// нет аргументов
+	if (buf[j] == '\0') {
+		return args;
+	}
+	
 	// записать в массив аргументы
-	for (i = 0; count_args > 0; i++, count_args--) {
+	for (i = 0; i < count_args; i++) {
 		// формируем строку аргумента
 		char *s = (char *) malloc(sizeof(char) * BUFSIZE);
 		if (s == NULL) {
 			perror("malloc");
 			return NULL;
 		}
-		for (k = 0; buf[j] != ' ' && buf[j] != '\n'; j++, k++) {
+		for (k = 0; buf[j] != ' ' && buf[j] != '\t' && buf[j] != '\n'; j++, k++) {
 			s[k] = buf[j];
 		}
+		// пропуск пробельного символа
+		++j;
+		
 		s[k] = '\0';
 
 		// записываем строку в массив аргументов
@@ -259,8 +272,8 @@ char **write_args(char *buf, int count_args) {
 	return args;
 }
 
-void destroy_args(char **command_args) {
-	for (int i = 0; command_args[i] != NULL; i++) {
+void destroy_args(char **command_args, int count_args) {
+	for (int i = 0; i < count_args && command_args[i] != NULL; i++) {
 		free(command_args[i]);
 	}
 	free(command_args);
