@@ -2,7 +2,6 @@
 
 struct Command {
 	int mode;
-	char *print;
 	int num;
 	char direction;
 };
@@ -29,3 +28,8 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *, int fd, int file_size);
 void destroy_lab(struct Labyrinth *);
 struct Point *get_point(struct Point *, struct Point *, int c, int num_line, int num_c);
 int move(struct Labyrinth *, int way);
+int get_command(FILE *fp, char *);
+int word_count(char *);
+char **write_args(char *, int count_args);
+int print_command(struct Command *, char **);
+void destroy_args(char **);

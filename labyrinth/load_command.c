@@ -20,7 +20,6 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 	// создать структуру для команды
 	struct Command *command = (struct Command *) malloc(sizeof(struct Command));
 	command->mode = -1;
-	command->print = "PRINT_ON"; 
 	command->num = -1;
 	command->direction = -1;
 
@@ -86,9 +85,106 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 }
 
 int init_command(FILE *fp, struct Command *command) {
-	char str[BUFSIZE];
+	char command_buf[BUFSIZE];
+	
+	// получаю одну команду из файла команд
+	int c = get_command(fp, command_buf);
+	if (c != 0) {
+		if (c == EOF) {
+			return EOF;
+		} 
+		return 1;
+	}
+	
+	// считываю в буфер название команды
+	char command_name[BUFSIZE];
+	int n = sscanf(command_buf, "%s", command_name);
+	if (n != 1) {
+		fprintf(stderr, "error read command\n");
+		return 1;
+	}
+
+	// посчитать кол-во аргументов команды
+	int count_args = word_count(command_buf) - 1;
+	if (count_args < 1) {
+		fprintf(stderr, "error read command\n");
+		return 1;
+	}
+
+	// формирую массив аргументов команды
+	char **command_args = write_args(command_buf, count_args);
+	if (command_args == NULL) {
+		return 1;
+	}
+	
+	// если считанная строка - команда режима печати
+	if (strcmp(command_name, "PRINT_ON") == 0) {
+		if (print_command(command, command_args) != 0) {
+			destroy_args(command_args);
+			return 1;
+		}
+		destroy_args(command_args);
+		return 0;
+	}
+
+	// если нет аргументов, кол-во выполнений команды по умолчанию: 1
+	if (command_args[0] == NULL) {
+		command->num = 1;
+	} else {
+		// проверка, что в буфере аргумента число
+		if (sscanf(command_args[0], "%d", &command->num) != 1) {
+			fprintf(stderr, "error read command\n");
+			destroy_args(command_args);
+			return 1;
+		}	
+	}
+
+	// количество выполнений команды не может быть меньше единицы 
+	if (command->num < 1) {
+		printf("error read command\n");
+		destroy_args(command_args);
+		return 1;
+	}
+
+	// записываю команду в структуру
+	if (strcmp(command_name, "UP") == 0) {
+		command->direction = UP;
+	} else if (strcmp(command_name, "DOWN") == 0) {
+		command->direction = DOWN;
+	} else if (strcmp(command_name, "LEFT") == 0) {
+		command->direction = LEFT;
+	} else if (strcmp(command_name, "RIGHT") == 0){
+		command->direction = RIGHT;
+	} else {
+		fprintf(stderr, "command data not received\n");
+		destroy_args(command_args);
+		return 1;
+	}
+	
+	destroy_args(command_args);
+	return 0;	
+}
+
+int print_command(struct Command *command, char **command_args) {
+	// записываю режим печати в структуру
+	if (strcmp(command_args[0], "each_step") == 0) {
+		command->mode = EACH_STEP;
+	} else if (strcmp(command_args[0], "error") == 0) {
+		command->mode = ERROR;
+	} else if (strcmp(command_args[0], "change_direction") == 0) {
+		command->mode = CHANGE_DIRECTION;
+	} else if (strcmp(command_args[0], "target") == 0) {
+		command->mode = TARGET;
+	} else {
+		fprintf(stderr, "error read print mode\n");
+		return 1;
+	}		
+	return 0;
+}
+
+int get_command(FILE *fp, char *buf) {
 	// считать из файла команд строку до \n или не больше BUFSIZE (64 байт)
-	if (fgets(str, sizeof(str), fp) == NULL) {
+	if (fgets(buf, BUFSIZE, fp) == NULL) {
 		if (errno) {
 			perror("fgets");
 			return 1;
@@ -98,83 +194,74 @@ int init_command(FILE *fp, struct Command *command) {
 
 	// проверить, что считанная строка корректна: есть \n
 	for (int i = 0;; i++) {
-		if (i == sizeof(str)) {
+		if (i == BUFSIZE) {
 			// \n не было найдено в считанной строке
 			fprintf(stderr, "error read command\n");
 			return 1;
 		}
-		if (str[i] == '\n') {
+		if (buf[i] == '\n') {
 			break;
 		}
-	}
+	}	
+	return 0;
+}
 
-	char command_buf[BUFSIZE];
-	char arg_buf[BUFSIZE];
-
-	// считываю строку в буфер под название команды и в буфер под аргумент команды
-	int n = sscanf(str, "%s %s", command_buf, arg_buf);
-
-	// если считанная строка - команда режима печати
-	if (strcmp(command_buf, command->print) == 0) {
-		// второй буфер не должен быть пустым
-		if (n != 2) {
-			fprintf(stderr, "error read command\n");
-			return 1;
-		}
-
-		// записываю режим печати в структуру
-		if (strcmp(arg_buf, "each_step") == 0) {
-			command->mode = EACH_STEP;
-		} else if (strcmp(arg_buf, "error") == 0) {
-			command->mode = ERROR;
-		} else if (strcmp(arg_buf, "change_direction") == 0) {
-			command->mode = CHANGE_DIRECTION;
-		} else if (strcmp(arg_buf, "target") == 0) {
-			command->mode = TARGET;
-		} else {
-			fprintf(stderr, "error read print mode\n");
-			return 1;
-		}		
-		return 0;
-	}
-
-	switch(n) {
-		// если буфер с числом не пуст
-		case 2: 
-			// проверка, что в буфере число
-			if (sscanf(arg_buf, "%d", &command->num) != 1) {
-				fprintf(stderr, "error read command\n");
-				return 1;
+int word_count(char *buf) {
+	int count, state;
+	count = state = 0;
+	
+	while (*buf != '\0') {
+		// инкрементируем счетчик, если пробельный символ идет после слова
+		if (*buf == ' ' || *buf == '\n') {
+			if (state == 1) {
+				++count;
+				state = 0;
 			}
-			break;
-		case 1:
-		 	// кол-во команд по умолчанию: 1
-		 	command->num = 1;
-		 	break;
-		 default:
-		 	fprintf(stderr, "error read command\n");
-			return 1;
-	}
-
-	// количество выполнений команды не может быть меньше единицы 
-	if (command->num < 1) {
-		printf("error read command\n");
-		return 1;
-	}
-
-	// записываю команду в структуру
-	if (strcmp(command_buf, "UP") == 0) {
-		command->direction = UP;
-	} else if (strcmp(command_buf, "DOWN") == 0) {
-		command->direction = DOWN;
-	} else if (strcmp(command_buf, "LEFT") == 0) {
-		command->direction = LEFT;
-	} else if (strcmp(command_buf, "RIGHT") == 0){
-		command->direction = RIGHT;
-	} else {
-		fprintf(stderr, "command data not received\n");
-		return 1;
+		} else {
+			state = 1;
+		}	
+		
+		++buf;
 	}
 	
-	return 0;	
+	return count;
+}
+
+char **write_args(char *buf, int count_args) {
+	// создать массив аргументов
+	char **args = (char **) calloc(count_args, sizeof(char *));
+	if (args == NULL) {
+		perror("calloc");
+		return NULL;
+	}
+	
+	int i, j, k;
+	// пропускаем имя команды
+	for (j = 0; buf[j] != ' '; j++);
+	++j;
+	// записать в массив аргументы
+	for (i = 0; count_args > 0; i++, count_args--) {
+		// формируем строку аргумента
+		char *s = (char *) malloc(sizeof(char) * BUFSIZE);
+		if (s == NULL) {
+			perror("malloc");
+			return NULL;
+		}
+		for (k = 0; buf[j] != ' ' && buf[j] != '\n'; j++, k++) {
+			s[k] = buf[j];
+		}
+		s[k] = '\0';
+
+		// записываем строку в массив аргументов
+		args[i] = s;
+	}
+
+	return args;
+}
+
+void destroy_args(char **command_args) {
+	for (int i = 0; command_args[i] != NULL; i++) {
+		free(command_args[i]);
+	}
+	free(command_args);
 }
