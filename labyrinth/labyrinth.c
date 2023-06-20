@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include "labyrinth.h"
 
-int main(int argc, char *argv[]) {	
+int main(int argc, char *argv[]) {
 	int fd;
 
 	// проверить корректность параметров программы
