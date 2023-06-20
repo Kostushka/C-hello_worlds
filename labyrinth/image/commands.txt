@@ -4,3 +4,4 @@ DOWN 5
 PRINT_ON error
 LEFT
 PRINT_ON each_step
+LEFT

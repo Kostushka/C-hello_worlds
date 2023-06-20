@@ -89,7 +89,7 @@ int init_command(FILE *fp, struct Command *command) {
 	char command_buf[BUFSIZE];
 	
 	// получаю одну команду из файла команд
-	int c = get_command(fp, command_buf);
+	int c = get_command(fp, command_buf, BUFSIZE);
 	if (c != 0) {
 		if (c == EOF) {
 			return EOF;
@@ -108,7 +108,7 @@ int init_command(FILE *fp, struct Command *command) {
 	// посчитать кол-во аргументов команды
 	int count_args = word_count(command_buf) - 1;
 	if (count_args < 0) {
-		fprintf(stderr, "incorrect number of args\n");
+		fprintf(stderr, "incorrect number of args %d\n", count_args);
 		return 1;
 	}
 
@@ -140,7 +140,7 @@ int init_command(FILE *fp, struct Command *command) {
 		}	
 	}
 
-	// количество выполнения команды не может быть меньше единицы 
+	// количество выполнений команды не может быть меньше единицы 
 	if (command->num < 1) {
 		printf("number of commands executed is less than 1\n");
 		destroy_args(command_args, count_args);
@@ -183,9 +183,9 @@ int print_command(struct Command *command, char **command_args) {
 	return 0;
 }
 
-int get_command(FILE *fp, char *buf) {
+int get_command(FILE *fp, char *buf, int size) {
 	// считать из файла команд строку до \n или EOF или не больше BUFSIZE (64 байт)
-	if (fgets(buf, BUFSIZE, fp) == NULL) {
+	if (fgets(buf, size, fp) == NULL) {
 		if (errno) {
 			perror("fgets");
 			return 1;
@@ -198,7 +198,7 @@ int get_command(FILE *fp, char *buf) {
 	}
 	// проверить, что считанная строка корректна: есть \n
 	for (int i = 0;; i++) {
-		if (i == BUFSIZE) {
+		if (i == size) {
 			// \n не было найдено в считанной строке
 			fprintf(stderr, "error read command\n");
 			return 1;
@@ -227,7 +227,9 @@ int word_count(char *buf) {
 		
 		++buf;
 	}
-	
+	if (state == in) {
+		++count;
+	}
 	return count;
 }
 
@@ -241,7 +243,11 @@ char **write_args(char *buf, int count_args) {
 	
 	int i, j, k;
 	// пропускаем имя команды
-	for (j = 0; !isspace(buf[j]); j++);
+	for (j = 0; !isspace(buf[j]); j++) {
+		if (buf[j] == '\0') {
+			return args;
+		}
+	}
 	for (; isspace(buf[j]); j++);
 	
 	// нет аргументов
