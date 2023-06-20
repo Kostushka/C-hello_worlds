@@ -38,7 +38,7 @@ struct Hash *create_hash(int size) {
 	}
 
 	// выделяем память под массив структур
-	if ((hash->hashtab = (struct Block **) calloc(1, sizeof(struct Block *) * size)) == NULL) {
+	if ((hash->hashtab = (struct Block **) calloc(size, sizeof(struct Block *))) == NULL) {
 		free(hash);
 		perror("calloc");
 		return NULL;
