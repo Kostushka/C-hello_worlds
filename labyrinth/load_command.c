@@ -47,6 +47,7 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 
 		// выполнение команды: перемещение по лабиринту
 		while (command->num > 0) {
+			// движение по лабиринту на один шаг
 			if (move(lab, command->direction) != 0) {
 				if (command->mode == ERROR) {
 					print_lab(lab);
@@ -56,6 +57,13 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 				free(command);
 				return NULL;
 			}
+			// отрисовать лабиринт на каждом шаге
+			if (command->mode == EACH_STEP) {
+				print_lab(lab);
+				printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
+				printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
+			}
+			
 			if (lab->traveler.x == lab->target.x && lab->traveler.y == lab->target.y) {
 				success = 1;
 				if (command->mode == TARGET) {
@@ -65,13 +73,6 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 				}
 			}
 			--command->num;
-		}
-
-		// отрисовать лабиринт на каждом шаге
-		if (command->mode == EACH_STEP) {
-			print_lab(lab);
-			printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-			printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
 		}
 	}
 

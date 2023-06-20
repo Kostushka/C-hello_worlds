@@ -1,7 +1,6 @@
-PRINT_ON change_direction error
+PRINT_ON each_step
 RIGHT 5
 DOWN 5
 PRINT_ON error
 LEFT
-PRINT_ON each_step
 LEFT
