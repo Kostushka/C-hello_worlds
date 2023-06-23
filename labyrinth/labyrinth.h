@@ -1,5 +1,19 @@
 #include <stdio.h>
 
+typedef int(*command_handler)(); 
+
+struct Block {
+	char *key;
+	command_handler value;
+	struct Block *next;
+}
+
+struct Hash {
+	struct Block **hashtab;
+	int size_hashtab;
+	int count_struct;
+}
+
 struct Command {
 	int mode;
 	int num;
