@@ -18,6 +18,26 @@
 
 void *load_command(FILE *fp, struct Labyrinth *lab) {
 
+	struct Hash *hash = hash_create(5);
+	if (hash == NULL) {
+		return NULL;
+	}
+	if (hash_add(hash, "LEFT", direction) == 1) {
+		return NULL;
+	}
+	if (hash_add(hash, "RIGHT", direction) == 1) {
+		return NULL;
+	}
+	if (hash_add(hash, "UP", direction) == 1) {
+		return NULL;
+	}
+	if (hash_add(hash, "DOWN", direction) == 1) {
+		return NULL;
+	}
+	if (hash_add(hash, "PRINT_ON", direction) == 1) {
+		return NULL;
+	}
+	
 	// создать структуру для команды
 	struct Command *command = (struct Command *) malloc(sizeof(struct Command));
 	command->mode = -1;
@@ -29,7 +49,7 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 	while (1) {
 		char prev_direction = command->direction;
 		// функция парсинга строки из файла команд в структуру команды
-		int init = init_command(fp, command);
+		int init = init_command(fp, command, hash);
 		if (init != 0) {
 			if (init == EOF) {
 				break;
@@ -86,9 +106,9 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 	free(command);
 }
 
-int init_command(FILE *fp, struct Command *command) {
+int init_command(FILE *fp, struct Command *command, struct Hash *hash) {
+
 	char command_buf[BUFSIZE];
-	
 	// получаю одну команду из файла команд
 	int c = get_command(fp, command_buf, BUFSIZE);
 	if (c != 0) {
@@ -118,6 +138,8 @@ int init_command(FILE *fp, struct Command *command) {
 	if (command_args == NULL) {
 		return 1;
 	}
+
+	command_handler handler = hash_find(hash, command_name);
 
 	// если считанная строка - команда режима печати
 	if (strcmp(command_name, "PRINT_ON") == 0) {

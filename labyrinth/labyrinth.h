@@ -1,19 +1,5 @@
 #include <stdio.h>
 
-typedef int(*command_handler)(); 
-
-struct Block {
-	char *key;
-	command_handler value;
-	struct Block *next;
-}
-
-struct Hash {
-	struct Block **hashtab;
-	int size_hashtab;
-	int count_struct;
-}
-
 struct Command {
 	int mode;
 	int num;
@@ -32,7 +18,27 @@ struct Labyrinth {
 	struct Point target;
 };
 
-int init_command(FILE *fp, struct Command *);
+typedef int(*command_handler)(struct Labyrinth *, int, char **); 
+
+struct Block {
+	char *key;
+	command_handler value;
+	struct Block *next;
+};
+
+struct Hash {
+	struct Block **hashtab;
+	int size_hashtab;
+	int count_struct;
+};
+
+struct Hash *hash_create(int size);
+unsigned hashfunc(struct Hash *hash, char *key);
+command_handler hash_find(struct Hash *hash, char *key);
+int hash_add(struct Hash *hash, char *key, command_handler value);
+
+int direction(struct Labyrinth *lab, int count_args, char **args);
+int init_command(FILE *fp, struct Command *, struct Hash *);
 void *load_command(FILE *fp, struct Labyrinth *);
 char *get_row(int fd, int size, int num_line, struct Point *, struct Point *);
 char *get_string(int fd, char *s, int n);

@@ -3,7 +3,7 @@
 #include <string.h>
 #include "labyrinth.h"
 
-struct Hash *create_hash(int size) {
+struct Hash *hash_create(int size) {
 	// выделить память под структуру хэша
 	struct Hash *hash = (struct Hash *) malloc(sizeof(struct Hash));
 	if (hash == NULL) {
@@ -32,22 +32,22 @@ unsigned hashfunc(struct Hash *hash, char *key) {
 	return hashvalue % hash->size_hashtab;
 }
 
-int find_hash(struct Hash *hash, char *key) {
+command_handler hash_find(struct Hash *hash, char *key) {
 	struct Block *p;
 	for (p = hash->hashtab[hashfunc(hash, key)]; p != NULL; p = p->next) {
 		// если команда с таким именем есть
 		if (strcmp(p->key, key) == 0) {
-			// вызов функции обработчика команды
-			p->value();
-			return 0;
+			// функция обработчик команды
+			return p->value;
 		}
 	}
-	return 1;	
+	return NULL;	
 }
 
-int add(struct Hash *hash, char *key, command_handler value) {
+int hash_add(struct Hash *hash, char *key, command_handler value) {
 	// команда уже записана
-	if (find_hash(hash, key) == 0) {
+	if (hash_find(hash, key) == 0) {
+		fprintf(stderr, "command is already added\n");
 		return 1;
 	}
 	
