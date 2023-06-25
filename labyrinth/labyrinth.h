@@ -37,8 +37,14 @@ unsigned hashfunc(struct Hash *hash, char *key);
 command_handler hash_find(struct Hash *hash, char *key);
 int hash_add(struct Hash *hash, char *key, command_handler value);
 
-int direction(struct Labyrinth *lab, int count_args, char **args);
-int init_command(FILE *fp, struct Command *, struct Hash *);
+int direction(struct Labyrinth *lab, int count_args, char **args, int direction);
+int direction_left(struct Labyrinth *lab, int count_args, char **args);
+int direction_right(struct Labyrinth *lab, int count_args, char **args);
+int direction_up(struct Labyrinth *lab, int count_args, char **args);
+int direction_down(struct Labyrinth *lab, int count_args, char **args);
+
+// int init_command(FILE *fp, struct Command *, struct Hash *, struct Labyrinth *);
+int init_command(FILE *fp, struct Hash *, struct Labyrinth *);
 void *load_command(FILE *fp, struct Labyrinth *);
 char *get_row(int fd, int size, int num_line, struct Point *, struct Point *);
 char *get_string(int fd, char *s, int n);

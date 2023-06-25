@@ -46,8 +46,8 @@ command_handler hash_find(struct Hash *hash, char *key) {
 
 int hash_add(struct Hash *hash, char *key, command_handler value) {
 	// команда уже записана
-	if (hash_find(hash, key) == 0) {
-		fprintf(stderr, "command is already added\n");
+	if (hash_find(hash, key) != NULL) {
+		fprintf(stderr, "command %s is already added\n", key);
 		return 1;
 	}
 	

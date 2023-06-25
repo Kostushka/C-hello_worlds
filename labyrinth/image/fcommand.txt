@@ -1,3 +1,2 @@
-PRINT_ON each_step
 DOWN
 LEFT 2
