@@ -6,6 +6,18 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include "labyrinth.h"
+#define COMMAND_SIZE(x) (int) (sizeof(x) / sizeof(x[0]))
+
+// массив структур с командами и их обработчиками
+struct Command {
+        char *command;
+        command_handler handler;
+} command_data[] = {
+        {"LEFT", direction_left},
+        {"RIGHT", direction_right},
+        {"UP", direction_up},
+        {"DOWN", direction_down}
+};
 
 int main(int argc, char *argv[]) {
 	int fd;
@@ -52,9 +64,25 @@ int main(int argc, char *argv[]) {
 		destroy_lab(lab);
 		return 1;
 	}
-
+	
+	// создать хэш
+	struct Hash *hash = hash_create(COMMAND_SIZE(command_data));
+	if (hash == NULL) {
+		destroy_lab(lab);
+		fclose(fp);
+		return 1;
+	}
+	// инициализировать хэш
+	for (int i = 0; i < COMMAND_SIZE(command_data); i++) {
+		if (hash_add(hash, command_data[i].command, command_data[i].handler) != 0) {
+			destroy_lab(lab);
+			fclose(fp);
+			return 1;
+		}
+	}
+	
 	// функция обработки файла команд
-	if (load_command(fp, lab) == NULL) {
+	if (load_command(fp, lab, hash) == NULL) {
 		destroy_lab(lab);
 		fclose(fp);
 		return 1;

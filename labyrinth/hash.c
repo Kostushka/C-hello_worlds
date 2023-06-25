@@ -71,3 +71,19 @@ int hash_add(struct Hash *hash, char *key, command_handler value) {
 	return 0;
 }
 
+void hash_destroy(struct Hash *hash) {
+	for (int i = 0; i < hash->size_hashtab; i++) {
+		if (hash->hashtab[i] == NULL) {
+			continue;
+		}
+		struct Block *p = hash->hashtab[i];
+		while (p != NULL) {
+			struct Block *temp = p;
+			p = p->next;
+			free(temp->key);
+			free(temp);
+		}	
+	}
+	free(hash->hashtab);
+	free(hash);
+}

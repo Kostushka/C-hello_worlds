@@ -16,24 +16,8 @@
 #define CHANGE_DIRECTION   64   //01000000
 #define TARGET            128   //10000000
 
-void *load_command(FILE *fp, struct Labyrinth *lab) {
+void *load_command(FILE *fp, struct Labyrinth *lab, struct Hash *hash) {
 
-	struct Hash *hash = hash_create(5);
-	if (hash == NULL) {
-		return NULL;
-	}
-	if (hash_add(hash, "LEFT", direction_left) == 1) {
-		return NULL;
-	}
-	if (hash_add(hash, "RIGHT", direction_right) == 1) {
-		return NULL;
-	}
-	if (hash_add(hash, "UP", direction_up) == 1) {
-		return NULL;
-	}
-	if (hash_add(hash, "DOWN", direction_down) == 1) {
-		return NULL;
-	}
 	printf("%p\n", hash_find(hash, "LEFT"));
 	printf("%p\n", hash_find(hash, "RIGHT"));
 	printf("%p\n", hash_find(hash, "UP"));
@@ -98,6 +82,8 @@ void *load_command(FILE *fp, struct Labyrinth *lab) {
 			// --command->num;
 		// }
 	}
+	hash_destroy(hash);
+
 // 
 	// if (!success) {
 		// printf("FAIL!\n");
@@ -144,13 +130,18 @@ int init_command(FILE *fp, struct Hash *hash, struct Labyrinth *lab) {
 
 	// получаю обработчик команды по имени
 	command_handler handler = hash_find(hash, command_name);
+	if (handler == NULL) {
+		fprintf(stderr, "handler not found\n");
+		return 1;
+	}
 	
 	// вызываю выполнение обработчика команды
 	handler(lab, count_args, command_args);
 	print_lab(lab);
 	printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
 	printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
-
+	destroy_args(command_args, count_args);
+	
 	// если считанная строка - команда режима печати
 	// if (strcmp(command_name, "PRINT_ON") == 0) {
 		// if (print_command(command, command_args) != 0) {

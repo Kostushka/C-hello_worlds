@@ -1,11 +1,5 @@
 #include <stdio.h>
 
-struct Command {
-	int mode;
-	int num;
-	char direction;
-};
-
 struct Point {
 	int x;
 	int y;
@@ -36,8 +30,8 @@ struct Hash *hash_create(int size);
 unsigned hashfunc(struct Hash *hash, char *key);
 command_handler hash_find(struct Hash *hash, char *key);
 int hash_add(struct Hash *hash, char *key, command_handler value);
+void hash_destroy(struct Hash *hash);
 
-int direction(struct Labyrinth *lab, int count_args, char **args, int direction);
 int direction_left(struct Labyrinth *lab, int count_args, char **args);
 int direction_right(struct Labyrinth *lab, int count_args, char **args);
 int direction_up(struct Labyrinth *lab, int count_args, char **args);
@@ -45,7 +39,7 @@ int direction_down(struct Labyrinth *lab, int count_args, char **args);
 
 // int init_command(FILE *fp, struct Command *, struct Hash *, struct Labyrinth *);
 int init_command(FILE *fp, struct Hash *, struct Labyrinth *);
-void *load_command(FILE *fp, struct Labyrinth *);
+void *load_command(FILE *fp, struct Labyrinth *, struct Hash *);
 char *get_row(int fd, int size, int num_line, struct Point *, struct Point *);
 char *get_string(int fd, char *s, int n);
 void print_lab(struct Labyrinth *);
@@ -57,5 +51,5 @@ int move(struct Labyrinth *, int way);
 int get_command(FILE *fp, char *, int size);
 int word_count(char *);
 char **write_args(char *, int count_args);
-int print_command(struct Command *, char **);
+int print_command(char **);
 void destroy_args(char **, int count_args);
