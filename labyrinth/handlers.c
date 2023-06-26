@@ -50,30 +50,18 @@ int direction(struct Labyrinth *lab, int count_args, char **command_args, int di
 }
 
 int direction_left(struct Labyrinth *lab, int count_args, char **command_args) {
-	if (direction(lab, count_args, command_args, LEFT) != 0) {
-		return 1;
-	}
-	return 0;
+	return direction(lab, count_args, command_args, LEFT);
 }
 
 int direction_right(struct Labyrinth *lab, int count_args, char **command_args) {
-	if (direction(lab, count_args, command_args, RIGHT) != 0) {
-		return 1;
-	}
-	return 0;
+	return direction(lab, count_args, command_args, RIGHT);
 }
 
 int direction_up(struct Labyrinth *lab, int count_args, char **command_args) {
-	if (direction(lab, count_args, command_args, UP) != 0) {
-		return 1;
-	}
-	return 0;
+	return direction(lab, count_args, command_args, UP);
 }
 
 int direction_down(struct Labyrinth *lab, int count_args, char **command_args) {
-	if (direction(lab, count_args, command_args, DOWN) != 0) {
-		return 1;
-	}
-	return 0;
+	return direction(lab, count_args, command_args, DOWN);
 }
 

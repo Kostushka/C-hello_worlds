@@ -252,17 +252,22 @@ int get_command(FILE *fp, char *buf, int size) {
 }
 // # __# ___
 int is_comment(char *str) {
-	for (int i = 0; str[i] != '\n' && str[i] != '\0'; i++) {
+	int i;
+	// пропуск пробельных символов
+	for (i = 0; isspace(str[i]); i++);
+	// команда не должна начинаться с # или состоять из пробельных символов
+	if (str[i] == '#' || str[i] == '\0') {
+		return 1;
+	}
+	while (str[i] != '\n' && str[i] != '\0') {
+		// исключаем комментарий из строки команды
 		if (str[i] == '#') {
-			return 1;
-		}
-		if (str[i] == ' ') {
-			continue;
-		} else {
+			str[i] = '\0';
 			return 0;
 		}
+		++i;
 	}
-	return 1;
+	return 0;
 }
 
 int word_count(char *buf) {
