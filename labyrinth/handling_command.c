@@ -16,12 +16,14 @@
 #define CHANGE_DIRECTION   64   //01000000
 #define TARGET            128   //10000000
 
-void *load_command(FILE *fp, struct Labyrinth *lab, struct Hash *hash) {
+void *handling_command(FILE *fp, struct Labyrinth *lab, struct Hash *command_data) {
 
-	printf("%p\n", hash_find(hash, "LEFT"));
-	printf("%p\n", hash_find(hash, "RIGHT"));
-	printf("%p\n", hash_find(hash, "UP"));
-	printf("%p\n", hash_find(hash, "DOWN"));
+	// отрисовать лабиринт
+	printf("-НАЧАЛО-\n");
+	print_lab(lab);
+	printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
+	printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
+
 	// if (hash_add(hash, "PRINT_ON", direction) == 1) {
 		// return NULL;
 	// }
@@ -36,9 +38,9 @@ void *load_command(FILE *fp, struct Labyrinth *lab, struct Hash *hash) {
 
 	while (1) {
 		// char prev_direction = command->direction;
-		// функция парсинга строки из файла команд в структуру команды
-		int init = init_command(fp, hash, lab);
-		if (init != 0) {
+		// функция парсинга строки из файла команд и выполнения команды
+		int init = init_command(fp, command_data, lab);
+		if (init != 0 && init != 1) {
 			if (init == EOF) {
 				break;
 			}
@@ -82,8 +84,6 @@ void *load_command(FILE *fp, struct Labyrinth *lab, struct Hash *hash) {
 			// --command->num;
 		// }
 	}
-	hash_destroy(hash);
-
 // 
 	// if (!success) {
 		// printf("FAIL!\n");
@@ -95,16 +95,21 @@ void *load_command(FILE *fp, struct Labyrinth *lab, struct Hash *hash) {
 	// free(command);
 }
 
-int init_command(FILE *fp, struct Hash *hash, struct Labyrinth *lab) {
+int init_command(FILE *fp, struct Hash *command_data, struct Labyrinth *lab) {
 
 	char command_buf[BUFSIZE];
 	// получаю одну команду из файла команд
 	int c = get_command(fp, command_buf, BUFSIZE);
-	if (c != 0) {
-		if (c == EOF) {
+	switch(c) {
+		case 0:
+			break;
+		// комментарий пропускаем
+		case 1:
+			return 1;
+		case EOF:
 			return EOF;
-		} 
-		return 1;
+		default:
+			return -1;
 	}
 	
 	// считываю в буфер название команды
@@ -112,34 +117,39 @@ int init_command(FILE *fp, struct Hash *hash, struct Labyrinth *lab) {
 	int n = sscanf(command_buf, "%s", command_name);
 	if (n != 1) {
 		fprintf(stderr, "error read command name\n");
-		return 1;
+		return -1;
 	}
 
 	// посчитать кол-во аргументов команды
 	int count_args = word_count(command_buf) - 1;
 	if (count_args < 0) {
 		fprintf(stderr, "incorrect number of args %d\n", count_args);
-		return 1;
+		return -1;
 	}
 
 	// формирую массив аргументов команды
 	char **command_args = write_args(command_buf, count_args);
 	if (command_args == NULL) {
-		return 1;
+		return -1;
 	}
 
 	// получаю обработчик команды по имени
-	command_handler handler = hash_find(hash, command_name);
+	command_handler handler = hash_find(command_data, command_name);
 	if (handler == NULL) {
-		fprintf(stderr, "handler not found\n");
-		return 1;
+		fprintf(stderr, "handler for command %s not found in hash\n", command_name);
+		return -1;
 	}
 	
 	// вызываю выполнение обработчика команды
-	handler(lab, count_args, command_args);
+	if (handler(lab, count_args, command_args) != 0) {
+		return -1;
+	}
+
+	// отрисовать лабиринт
 	print_lab(lab);
 	printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
 	printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
+	
 	destroy_args(command_args, count_args);
 	
 	// если считанная строка - команда режима печати
@@ -212,12 +222,16 @@ int get_command(FILE *fp, char *buf, int size) {
 	if (fgets(buf, size, fp) == NULL) {
 		if (errno) {
 			perror("fgets");
-			return 1;
+			return -1;
 		}
 		return EOF;		
 	}
 	// проверить, что считанная строка корректна: есть EOF
 	if (feof(fp)) {
+		// проверка на комментарий
+		if (is_comment(buf)) {
+			return 1;
+		}
 		return 0;
 	}
 	// проверить, что считанная строка корректна: есть \n
@@ -225,12 +239,30 @@ int get_command(FILE *fp, char *buf, int size) {
 		if (i == size) {
 			// \n не было найдено в считанной строке
 			fprintf(stderr, "error read command\n");
-			return 1;
+			return -1;
 		}
 		if (buf[i] == '\n') {
+			// проверка на комментарий
+			if (is_comment(buf)) {
+				return 1;
+			}
 			return 0;
 		}
 	}	
+}
+// # __# ___
+int is_comment(char *str) {
+	for (int i = 0; str[i] != '\n' && str[i] != '\0'; i++) {
+		if (str[i] == '#') {
+			return 1;
+		}
+		if (str[i] == ' ') {
+			continue;
+		} else {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 int word_count(char *buf) {

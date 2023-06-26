@@ -60,6 +60,17 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 		lab->labyrinth[i] = line;
 	}
 
+	// позиция в файле после прочтения
+	int pos = lseek(fd, 0, SEEK_CUR);
+	if (pos == -1) {
+		perror("lseek");
+		return NULL;
+	}
+	if (pos != file_size) {
+		fprintf(stderr, "file size is larger than matrix size\n");
+		return NULL;
+	}
+
 	// проверка, что координаты '*' получены
 	if (lab->traveler.x == -1) {
 		fprintf(stderr, "file incorrect: missing symbol '*'\n");
@@ -72,17 +83,50 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 		return NULL;
 	}
 
-	// позиция в файле после прочтения
-	int pos = lseek(fd, 0, SEEK_CUR);
-	if (pos == -1) {
-		perror("lseek");
-		return NULL;
-	}
-	if (pos != file_size) {
-		fprintf(stderr, "file size is larger than matrix size\n");
-		return NULL;
-	}
-
 	return lab;
+}
+
+void print_lab(struct Labyrinth *lab) {
+	int size = lab->size;
+	while (size > 0) {
+		if (size == lab->size) {
+			printf("+");
+		}
+		printf("-");
+		if (size == 1) {
+			printf("+");
+		}
+		--size;
+	}
+	putchar('\n');
+	for (int i = 0; i < lab->size; i++) {
+		printf("|");
+		for (int j = 0; j < lab->size; j++) {
+			printf("%c", lab->labyrinth[i][j]);
+		}
+		printf("|");
+		putchar('\n');
+	}
+	size = lab->size;
+	while (size > 0) {
+		if (size == lab->size) {
+			printf("+");
+		}
+		printf("-");
+		if (size == 1) {
+			printf("+");
+		}
+		--size;
+	}
+	putchar('\n');
+}
+
+
+void destroy_lab(struct Labyrinth *lab) {
+	for (int k = 0; k < lab->size && lab->labyrinth[k] != NULL; k++) {
+		free(lab->labyrinth[k]);
+	}
+	free(lab->labyrinth);
+	free(lab);
 }
 
