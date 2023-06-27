@@ -16,14 +16,12 @@
 #define CHANGE_DIRECTION   64   //01000000
 #define TARGET            128   //10000000
 
-void *handling_command(FILE *fp, struct Labyrinth *lab, struct Hash *command_data) {
+void *handling_command(FILE *fp, struct Labyrinth *lab, struct Hash *command_data, struct Command_mode *mode) {
 
 	// отрисовать лабиринт
 	printf("-НАЧАЛО-\n");
 	print_lab(lab);
-	printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-	printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
-
+	
 	// if (hash_add(hash, "PRINT_ON", direction) == 1) {
 		// return NULL;
 	// }
@@ -39,7 +37,7 @@ void *handling_command(FILE *fp, struct Labyrinth *lab, struct Hash *command_dat
 	while (1) {
 		// char prev_direction = command->direction;
 		// функция парсинга строки из файла команд и выполнения команды
-		int init = init_command(fp, command_data, lab);
+		int init = init_command(fp, lab, command_data, mode);
 		if (init != 0 && init != 1) {
 			if (init == EOF) {
 				break;
@@ -95,7 +93,7 @@ void *handling_command(FILE *fp, struct Labyrinth *lab, struct Hash *command_dat
 	// free(command);
 }
 
-int init_command(FILE *fp, struct Hash *command_data, struct Labyrinth *lab) {
+int init_command(FILE *fp, struct Labyrinth *lab, struct Hash *command_data, struct Command_mode *mode) {
 
 	char command_buf[BUFSIZE];
 	// получаю одну команду из файла команд
@@ -141,14 +139,9 @@ int init_command(FILE *fp, struct Hash *command_data, struct Labyrinth *lab) {
 	}
 	
 	// вызываю выполнение обработчика команды
-	if (handler(lab, count_args, command_args) != 0) {
+	if (handler(lab, mode, count_args, command_args) != 0) {
 		return -1;
 	}
-
-	// отрисовать лабиринт
-	print_lab(lab);
-	printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-	printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
 	
 	destroy_args(command_args, count_args);
 	
@@ -229,7 +222,7 @@ int get_command(FILE *fp, char *buf, int size) {
 	// проверить, что считанная строка корректна: есть EOF
 	if (feof(fp)) {
 		// проверка на комментарий
-		if (is_comment(buf)) {
+		if (is_empty(buf)) {
 			return 1;
 		}
 		return 0;
@@ -243,7 +236,7 @@ int get_command(FILE *fp, char *buf, int size) {
 		}
 		if (buf[i] == '\n') {
 			// проверка на комментарий
-			if (is_comment(buf)) {
+			if (is_empty(buf)) {
 				return 1;
 			}
 			return 0;
@@ -251,7 +244,7 @@ int get_command(FILE *fp, char *buf, int size) {
 	}	
 }
 // # __# ___
-int is_comment(char *str) {
+int is_empty(char *str) {
 	int i;
 	// пропуск пробельных символов
 	for (i = 0; isspace(str[i]); i++);

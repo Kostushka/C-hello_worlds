@@ -2,15 +2,52 @@
 #include <string.h>
 #include "labyrinth.h"
 
-#define UP            1   //0001 y ^ -
-#define DOWN          2   //0010 y v +
-#define LEFT          4   //0100 x < -
-#define RIGHT         8   //1000 x > +
+#define UP                  1   //0001 y ^ -
+#define DOWN                2   //0010 y v +
+#define LEFT                4   //0100 x < -
+#define RIGHT               8   //1000 x > +
 
-int direction(struct Labyrinth *, int, char **, int);
+#define EACH_STEP          16   //00010000
+#define ERROR              32   //00100000
+#define CHANGE_DIRECTION   64   //01000000
+#define TARGET            128   //10000000
+
+// обработчик команды печати
+int print_on(struct Labyrinth *lab, struct Command_mode *mode, int count_args, char **command_args) {
+	if (count_args < 1) {
+		fprintf(stderr, "incorrect number of args %d\n", count_args);
+		destroy_args(command_args, count_args);
+		return 1;
+	}
+	for (int i = 0; i < count_args; i++) {
+		if (strcmp(command_args[i], "each_step") == 0) {
+			mode->print_mode |= EACH_STEP;
+		} else if (strcmp(command_args[i], "error") == 0) {
+			mode->print_mode |= ERROR;
+		} else if (strcmp(command_args[i], "change_direction") == 0) {
+			mode->print_mode |= CHANGE_DIRECTION;
+		} else if (strcmp(command_args[i], "target") == 0) {
+			mode->print_mode |= TARGET;
+		} else {
+			fprintf(stderr, "error read print mode\n");
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int direction(struct Labyrinth *, struct Command_mode *mode, int, char **, int);
 
 // обработчик команды движения
-int direction(struct Labyrinth *lab, int count_args, char **command_args, int direction) {
+int direction(struct Labyrinth *lab, struct Command_mode *mode, int count_args, char **command_args, int direction) {
+	static int prev_direction = 0;
+	// отрисовать лабиринт на изменении направления движения
+	if (mode->print_mode & CHANGE_DIRECTION) {
+		if (prev_direction != 0 && prev_direction != direction) {
+			print_lab(lab);
+		}
+		prev_direction = direction;
+	}
 	int num;
 	// проверка, что число аргументов корректно
 	switch(count_args) {
@@ -41,27 +78,43 @@ int direction(struct Labyrinth *lab, int count_args, char **command_args, int di
 	// перемещение на num шагов
 	while (num > 0) {
 		if (move(lab, direction) != 0) {
+			// отрисовать лабиринт на ошибке движения
+			if (mode->print_mode & ERROR) {
+				print_lab(lab);
+			}
 			destroy_args(command_args, count_args);
 			return 1;
 		}
+		// отрисовать лабиринт на каждом шаге
+		if (mode->print_mode & EACH_STEP) {
+			print_lab(lab);
+		}
+		if (lab->traveler.x == lab->target.x && lab->traveler.y == lab->target.y) {
+			// отрисовать лабиринт на достижении цели
+			if (mode->print_mode & TARGET) {
+			 	print_lab(lab);
+			}
+			printf("SUCCESS!\n");
+		}
 		--num;
 	}
+	
 	return 0;
 }
 
-int direction_left(struct Labyrinth *lab, int count_args, char **command_args) {
-	return direction(lab, count_args, command_args, LEFT);
+int direction_left(struct Labyrinth *lab, struct Command_mode *mode, int count_args, char **command_args) {
+	return direction(lab, mode, count_args, command_args, LEFT);
 }
 
-int direction_right(struct Labyrinth *lab, int count_args, char **command_args) {
-	return direction(lab, count_args, command_args, RIGHT);
+int direction_right(struct Labyrinth *lab, struct Command_mode *mode, int count_args, char **command_args) {
+	return direction(lab, mode, count_args, command_args, RIGHT);
 }
 
-int direction_up(struct Labyrinth *lab, int count_args, char **command_args) {
-	return direction(lab, count_args, command_args, UP);
+int direction_up(struct Labyrinth *lab, struct Command_mode *mode, int count_args, char **command_args) {
+	return direction(lab, mode, count_args, command_args, UP);
 }
 
-int direction_down(struct Labyrinth *lab, int count_args, char **command_args) {
-	return direction(lab, count_args, command_args, DOWN);
+int direction_down(struct Labyrinth *lab, struct Command_mode *mode, int count_args, char **command_args) {
+	return direction(lab, mode, count_args, command_args, DOWN);
 }
 

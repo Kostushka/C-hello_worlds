@@ -12,7 +12,11 @@ struct Labyrinth {
 	struct Point target;
 };
 
-typedef int(*command_handler)(struct Labyrinth *, int, char **); 
+struct Command_mode {
+	unsigned int print_mode;
+};
+
+typedef int(*command_handler)(struct Labyrinth *, struct Command_mode *, int, char **); 
 
 struct Block {
 	char *key;
@@ -32,15 +36,16 @@ command_handler hash_find(struct Hash *hash, char *key);
 int hash_add(struct Hash *hash, char *key, command_handler value);
 void hash_destroy(struct Hash *hash);
 
-int direction_left(struct Labyrinth *lab, int count_args, char **args);
-int direction_right(struct Labyrinth *lab, int count_args, char **args);
-int direction_up(struct Labyrinth *lab, int count_args, char **args);
-int direction_down(struct Labyrinth *lab, int count_args, char **args);
+int direction_left(struct Labyrinth *lab, struct Command_mode *mode, int count_args, char **args);
+int direction_right(struct Labyrinth *lab, struct Command_mode *mode, int count_args, char **args);
+int direction_up(struct Labyrinth *lab, struct Command_mode *mode, int count_args, char **args);
+int direction_down(struct Labyrinth *lab, struct Command_mode *mode, int count_args, char **args);
 
+int print_on(struct	Labyrinth *lab, struct Command_mode *mode, int count_args, char **args);
 
 struct Hash *hash_init(void);
-int init_command(FILE *fp, struct Hash *, struct Labyrinth *);
-void *handling_command(FILE *fp, struct Labyrinth *, struct Hash *);
+int init_command(FILE *fp, struct Labyrinth *, struct Hash *, struct Command_mode *);
+void *handling_command(FILE *fp, struct Labyrinth *, struct Hash *, struct Command_mode *);
 char *get_row(int fd, int size, int num_line, struct Point *, struct Point *);
 char *get_string(int fd, char *s, int n);
 void print_lab(struct Labyrinth *);
@@ -54,4 +59,4 @@ int word_count(char *);
 char **write_args(char *, int count_args);
 int print_command(char **);
 void destroy_args(char **, int count_args);
-int is_comment(char *str);
+int is_empty(char *str);

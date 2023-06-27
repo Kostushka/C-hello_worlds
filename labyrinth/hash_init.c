@@ -11,6 +11,7 @@ struct Command {
 	{"DOWN", direction_down},
 	{"LEFT", direction_left},
 	{"RIGHT", direction_right},
+	{"PRINT_ON", print_on},
 };
 
 struct Hash *hash_init(void) {
