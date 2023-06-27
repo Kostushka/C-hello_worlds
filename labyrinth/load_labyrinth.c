@@ -119,8 +119,6 @@ void print_lab(struct Labyrinth *lab) {
 		--size;
 	}
 	putchar('\n');
-	printf("*: {%d, %d}\n", lab->traveler.x, lab->traveler.y);
-	printf("+: {%d, %d}\n", lab->target.x, lab->target.y);
 }
 
 

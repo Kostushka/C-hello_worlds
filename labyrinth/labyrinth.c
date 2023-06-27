@@ -54,13 +54,9 @@ int main(int argc, char *argv[]) {
 		fclose(fp);
 		return 1;
 	}
-
-	// структура с режимами
-	struct Command_mode mode;
-	mode.print_mode = ~0777;
 	
 	// функция обработки файла команд
-	if (handling_command(fp, lab, command_data, &mode) == NULL) {
+	if (handling_command(fp, lab, command_data) == NULL) {
 		destroy_lab(lab);
 		fclose(fp);
 		return 1;

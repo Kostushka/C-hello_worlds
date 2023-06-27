@@ -1,6 +1,6 @@
-PRINT_ON change_direction target
+PRINT_ON each_step
 RIGHT 5
 DOWN 5
-LEFT
+PRINT_ON error
 LEFT
 LEFT
