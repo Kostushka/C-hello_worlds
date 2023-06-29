@@ -1,8 +1,9 @@
 #include <stdio.h>
+#include <string.h>
 #define LEN(x) (int) (sizeof(x) / sizeof(x[0]))
 
 //                                  *8*[13, 3, 8, 1, 15, 2, 3, 7, 4]
-//                                      0  1  2  3 |4|  5  6  7  8
+//                                       0  1  2  3 |4|  5  6  7  8
 //                               *4*[13, 3, 8, 1, 15]  *7*[2, 3, 7, 4]
 //                                    0  1 |2| 3   4       5 |6| 7  8
 //                            *2*[13, 3, 8] *3*[1, 15]    *5*[2, 3] *6*[7, 4]
@@ -47,12 +48,9 @@ void merge_sort(int *arr, int low, int high) {
 }
 
 void merge(int *arr, int low, int high, int mid) {
-	// создать массив для отсортированных элементов
-	int len = 0;
-	for (int i = low; i <= high; i++) {
-		++len;
-	}
-	char buf[len];
+	//создать массив для отсортированных элементов
+	int len = high - low + 1;
+	int buf[len];
 
 	// сортировка
 	int i, j, k;
@@ -81,7 +79,8 @@ void merge(int *arr, int low, int high, int mid) {
 	}
 	
 	// заменяем в исходном массиве отсортированным блоком элементов исходный блок
-	for (int i = 0; i < k; i++) {
-		arr[low++] = buf[i];
-	}	
+	memcpy(&arr[low], buf, len * sizeof(buf[0]));
+	// for (int i = 0; i < k; i++) {
+		// arr[low++] = buf[i];
+	// }
 }
