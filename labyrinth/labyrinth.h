@@ -54,4 +54,4 @@ int word_count(char *);
 char **write_args(char *, int count_args);
 int print_command(char **);
 void destroy_args(char **, int count_args);
-int is_comment(char *str);
+int is_empty(char *str);

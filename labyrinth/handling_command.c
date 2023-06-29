@@ -229,7 +229,7 @@ int get_command(FILE *fp, char *buf, int size) {
 	// проверить, что считанная строка корректна: есть EOF
 	if (feof(fp)) {
 		// проверка на комментарий
-		if (is_comment(buf)) {
+		if (is_empty(buf)) {
 			return 1;
 		}
 		return 0;
@@ -238,12 +238,12 @@ int get_command(FILE *fp, char *buf, int size) {
 	for (int i = 0;; i++) {
 		if (i == size) {
 			// \n не было найдено в считанной строке
-			fprintf(stderr, "error read command\n");
+			fprintf(stderr, "error read command %s\n", buf);
 			return -1;
 		}
 		if (buf[i] == '\n') {
 			// проверка на комментарий
-			if (is_comment(buf)) {
+			if (is_empty(buf)) {
 				return 1;
 			}
 			return 0;
@@ -251,7 +251,7 @@ int get_command(FILE *fp, char *buf, int size) {
 	}	
 }
 // # __# ___
-int is_comment(char *str) {
+int is_empty(char *str) {
 	int i;
 	// пропуск пробельных символов
 	for (i = 0; isspace(str[i]); i++);

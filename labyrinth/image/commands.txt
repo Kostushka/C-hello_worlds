@@ -1,6 +1,5 @@
-PRINT_ON each_step
+# PRINT_ON each_step
 RIGHT 5
 DOWN 5
-PRINT_ON error
 LEFT
 LEFT
