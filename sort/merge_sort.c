@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #define LEN(x) (int) (sizeof(x) / sizeof(x[0]))
 
 //                                  *8*[13, 3, 8, 1, 15, 2, 3, 7, 4]
@@ -12,6 +13,7 @@
 //                             |0|  1    2     3     4        5    6    7    8
 //                        [13] [3]
 //                          0   1
+
 
 void merge_sort(int *arr, int low, int high);
 void merge(int *arr, int low, int high, int mid);
@@ -48,10 +50,15 @@ void merge_sort(int *arr, int low, int high) {
 }
 
 void merge(int *arr, int low, int high, int mid) {
-	//создать массив для отсортированных элементов
+	// создать массив для отсортированных элементов
 	int len = high - low + 1;
-	int buf[len];
-
+	// память выделяется в куче, ибо размер стека ограничен: 8Мб
+	int *buf = (int *) malloc(sizeof(int) * len);
+	if (buf == NULL) {
+		perror("malloc\n");
+		return;
+	}
+	
 	// сортировка
 	int i, j, k;
 	i = low;
@@ -80,7 +87,7 @@ void merge(int *arr, int low, int high, int mid) {
 	
 	// заменяем в исходном массиве отсортированным блоком элементов исходный блок
 	memcpy(&arr[low], buf, len * sizeof(buf[0]));
-	// for (int i = 0; i < k; i++) {
-		// arr[low++] = buf[i];
-	// }
+
+	free(buf);
 }
+
