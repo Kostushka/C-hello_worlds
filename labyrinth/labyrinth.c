@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	
-	// создать хэш
+	// создать хэш для имен команд и их обработчиков
 	struct Hash *command_data = hash_init();
 	if (command_data == NULL) {
 		destroy_lab(lab);

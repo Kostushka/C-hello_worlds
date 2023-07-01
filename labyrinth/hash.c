@@ -32,7 +32,7 @@ unsigned hashfunc(struct Hash *hash, char *key) {
 	return hashvalue % hash->size_hashtab;
 }
 
-command_handler hash_find(struct Hash *hash, char *key) {
+void *hash_find(struct Hash *hash, char *key) {
 	struct Block *p;
 	for (p = hash->hashtab[hashfunc(hash, key)]; p != NULL; p = p->next) {
 		// если команда с таким именем есть
@@ -44,7 +44,7 @@ command_handler hash_find(struct Hash *hash, char *key) {
 	return NULL;	
 }
 
-int hash_add(struct Hash *hash, char *key, command_handler value) {
+int hash_add(struct Hash *hash, char *key, void *value) {
 	// команда уже записана
 	if (hash_find(hash, key) != NULL) {
 		fprintf(stderr, "command %s is already added\n", key);

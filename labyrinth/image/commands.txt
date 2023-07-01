@@ -1,4 +1,4 @@
-PRINT_ON each_step error
+PRINT_ON each_step change_direction
 RIGHT 5
 DOWN 5
 PRINT_ON ~error

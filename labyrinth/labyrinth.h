@@ -16,7 +16,7 @@ typedef int(*command_handler)(struct Labyrinth *, int, char **);
 
 struct Block {
 	char *key;
-	command_handler value;
+	void *value;
 	struct Block *next;
 };
 
@@ -28,8 +28,8 @@ struct Hash {
 
 struct Hash *hash_create(int size);
 unsigned hashfunc(struct Hash *hash, char *key);
-command_handler hash_find(struct Hash *hash, char *key);
-int hash_add(struct Hash *hash, char *key, command_handler value);
+void *hash_find(struct Hash *hash, char *key);
+int hash_add(struct Hash *hash, char *key, void *value);
 void hash_destroy(struct Hash *hash);
 
 int direction_left(struct Labyrinth *lab, int count_args, char **args);

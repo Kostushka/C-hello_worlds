@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #include "labyrinth.h"
 
 #define UP                  1   //00000001 y ^ -
@@ -11,6 +12,19 @@
 #define ERROR              32   //00100000
 #define CHANGE_DIRECTION   64   //01000000
 #define TARGET            128   //10000000
+
+#define MODE_MAX(x) (int) (sizeof(x) / sizeof(x[0]))
+
+// массив структур с режимами печати
+struct Mode {
+	char *mode;
+	intptr_t value;
+} mode[] = {
+	{"each_step", EACH_STEP},	
+	{"error", ERROR},	
+	{"change_direction", CHANGE_DIRECTION},	
+	{"target", TARGET},	
+};
 
 int direction(struct Labyrinth *, int, char **, int);
 
@@ -72,35 +86,44 @@ int direction_down(struct Labyrinth *lab, int count_args, char **command_args) {
 
 int print_on(struct Labyrinth *lab, int count_args, char **command_args) {
 	unsigned int print_mode = 0;
-	for (int i = 0; i < count_args; i++) {
-		if (command_args[i][0] == '~') {
-			if (strcmp(command_args[i], "~") == 0) {
-				print_mode &= ~(EACH_STEP | ERROR | CHANGE_DIRECTION | TARGET);
-			} else if (strcmp(command_args[i], "~each_step") == 0) {
-				print_mode &= ~EACH_STEP;
-			} else if (strcmp(command_args[i], "~error") == 0) {
-				print_mode &= ~ERROR;
-			} else if (strcmp(command_args[i], "~change_direction") == 0) {
-				print_mode &= ~CHANGE_DIRECTION;
-			} else if (strcmp(command_args[i], "~target") == 0) {
-				print_mode &= ~TARGET;
-			} else {
-				fprintf(stderr, "incorrect name of args for command print %s\n", command_args[i]);
-				return 1;
-			}
-		} else if (strcmp(command_args[i], "each_step") == 0) {
-			print_mode |= EACH_STEP; 
-		} else if (strcmp(command_args[i], "error") == 0) {
-			print_mode |= ERROR;
-		} else if (strcmp(command_args[i], "change_direction") == 0) {
-			print_mode |= CHANGE_DIRECTION;
-		} else if (strcmp(command_args[i], "target") == 0) {
-			print_mode |= TARGET;
-		} else {
-			fprintf(stderr, "incorrect name of args for command print %s\n", command_args[i]);
+	int mode_value;
+	
+	// хэш для режимов
+	struct Hash *hash_mode = hash_create(MODE_MAX(mode));
+	for (int i = 0; i < MODE_MAX(mode); i++) {
+		if (hash_add(hash_mode, mode[i].mode, (void *) mode[i].value) != 0) {
 			return 1;
 		}
 	}
+	for (int i = 0; i < count_args; i++) {
+		// если знак инверсии
+		if (command_args[i][0] == '~') {
+			// отключение всех режимов печати
+			if (command_args[i][1] == '\0') {
+				print_mode &= ~(EACH_STEP | ERROR | CHANGE_DIRECTION | TARGET);
+				continue;
+			}
+			// получение режима печати
+			mode_value = (intptr_t) hash_find(hash_mode, &command_args[i][1]);
+			if (mode_value == 0) {
+				fprintf(stderr, "%s mode not found\n", &command_args[i][1]);
+				return 1;
+			}
+			// отключение режима печати
+			print_mode &= ~mode_value;
+			continue;
+		} 
+		// получение режима печати
+		mode_value = (intptr_t) hash_find(hash_mode, command_args[i]);
+		if (mode_value == 0) {
+			fprintf(stderr, "%s mode not found\n", command_args[i]);
+			return 1;
+		}
+		// установка режима печати
+		print_mode |= mode_value;
+	}
+	// очистить память выделенную под хэш
+	hash_destroy(hash_mode);
 	printf("print_mode: %o\n", print_mode);
 	return 0;
 }
