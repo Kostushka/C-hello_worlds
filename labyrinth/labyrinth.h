@@ -36,7 +36,7 @@ int direction_left(struct Labyrinth *lab, int count_args, char **args);
 int direction_right(struct Labyrinth *lab, int count_args, char **args);
 int direction_up(struct Labyrinth *lab, int count_args, char **args);
 int direction_down(struct Labyrinth *lab, int count_args, char **args);
-
+int print_on(struct Labyrinth *lab, int	count_args, char **args);
 
 struct Hash *hash_init(void);
 int init_command(FILE *fp, struct Hash *, struct Labyrinth *);
