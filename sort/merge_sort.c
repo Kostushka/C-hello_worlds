@@ -53,9 +53,9 @@ void merge(int *arr, int low, int high, int mid) {
 	// создать массив для отсортированных элементов
 	int len = high - low + 1;
 	// память выделяется в куче, ибо размер стека ограничен: 8Мб
-	int *buf = (int *) malloc(sizeof(int) * len);
+	int *buf = (int *) malloc(sizeof(arr[0]) * len);
 	if (buf == NULL) {
-		perror("malloc\n");
+		perror("malloc");
 		return;
 	}
 	
