@@ -13,7 +13,7 @@
 #define CHANGE_DIRECTION   64   //01000000
 #define TARGET            128   //10000000
 
-#define MODE_MAX(x) (int) (sizeof(x) / sizeof(x[0]))
+#define MODE_SIZE(x) (int) (sizeof(x) / sizeof(x[0]))
 
 // массив структур с режимами печати
 struct Mode {
@@ -88,39 +88,51 @@ int print_on(struct Labyrinth *lab, int count_args, char **command_args) {
 	unsigned int print_mode = 0;
 	int mode_value;
 	
-	// хэш для режимов
-	struct Hash *hash_mode = hash_create(MODE_MAX(mode));
-	for (int i = 0; i < MODE_MAX(mode); i++) {
+	// хэш для режимов печати
+	struct Hash *hash_mode = hash_create(MODE_SIZE(mode));
+	for (int i = 0; i < MODE_SIZE(mode); i++) {
 		if (hash_add(hash_mode, mode[i].mode, (void *) mode[i].value) != 0) {
 			return 1;
 		}
 	}
 	for (int i = 0; i < count_args; i++) {
+		int is_invers = 0;
+		char *arg;
+		char is_mode;
+		
 		// если знак инверсии
 		if (command_args[i][0] == '~') {
 			// отключение всех режимов печати
 			if (command_args[i][1] == '\0') {
-				print_mode &= ~(EACH_STEP | ERROR | CHANGE_DIRECTION | TARGET);
+				print_mode = 0;
 				continue;
 			}
-			// получение режима печати
-			mode_value = (intptr_t) hash_find(hash_mode, &command_args[i][1]);
-			if (mode_value == 0) {
-				fprintf(stderr, "%s mode not found\n", &command_args[i][1]);
-				return 1;
-			}
-			// отключение режима печати
-			print_mode &= ~mode_value;
-			continue;
+			is_invers = 1;
 		} 
+		
+		if (is_invers) {
+			arg = &command_args[i][1];
+			is_mode = 0;
+		} else {
+			arg = command_args[i];
+			is_mode = 1;
+		}
+		
 		// получение режима печати
-		mode_value = (intptr_t) hash_find(hash_mode, command_args[i]);
+		mode_value = (intptr_t) hash_find(hash_mode, arg);
+		
 		if (mode_value == 0) {
-			fprintf(stderr, "%s mode not found\n", command_args[i]);
+			fprintf(stderr, "%s mode not found\n", arg);
 			return 1;
 		}
-		// установка режима печати
-		print_mode |= mode_value;
+		
+		if (is_mode) {
+			// установка режима печати
+			print_mode |= mode_value;
+		} else {
+			// отключение режима печати
+			print_mode &= ~mode_value;
+		}
 	}
 	// очистить память выделенную под хэш
 	hash_destroy(hash_mode);
