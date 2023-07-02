@@ -7,7 +7,7 @@ enum direction {
 	UP = 1,                  //00000001 y ^ -
 	DOWN = 2,                //00000010 y v +
 	LEFT = 4,                //00000100 x < -
-	RIGHT = 8	             //00001000 x > +
+	RIGHT = 8                //00001000 x > +
 };
 
 enum mode {
