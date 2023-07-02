@@ -3,12 +3,12 @@
 #include <unistd.h>
 #include "labyrinth.h"
 
-struct Labyrinth *init_labyrint(int fd, int file_size) {
+struct Labyrinth *init_labyrint(int fd, struct Context *context, int file_size) {
 	struct Labyrinth *lab = (struct Labyrinth *) malloc(sizeof(struct Labyrinth));
-	lab->traveler.x = -1;
-	lab->traveler.y = -1;
-	lab->target.x = -1;
-	lab->target.y = -1;
+	if (lab == NULL) {
+		perror("malloc");
+		return NULL;
+	}
 
 	char line[10];
 
@@ -32,22 +32,22 @@ struct Labyrinth *init_labyrint(int fd, int file_size) {
 	}
 
 	// создаю двумерный массив
-	if (load_labyrinth(lab, fd, file_size) == NULL) {
-		destroy_lab(lab);
+	if (load_labyrinth(context, lab, fd, file_size) == NULL) {
+		destroy_lab(context, lab);
 		return NULL;
 	}
 
 	return lab;
 }
 
-struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
+struct Labyrinth *load_labyrinth(struct Context *context, struct Labyrinth *lab, int fd, int file_size) {
 	char *line;
 
 	int i;
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
 		// читаю строку из файла
-		line = get_row(fd, lab->size, i, &lab->traveler, &lab->target);
+		line = get_row(fd, lab->size, i, &context->traveler, &context->target);
 
 		// проверка строки на EOF: файл меньше заданной размерности
 		if (line == NULL) {
@@ -72,13 +72,13 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 	}
 
 	// проверка, что координаты '*' получены
-	if (lab->traveler.x == -1) {
+	if (context->traveler.x == -1) {
 		fprintf(stderr, "file incorrect: missing symbol '*'\n");
 		return NULL;
 	}
 
 	// проверка, что координаты '+' получены
-	if (lab->target.x == -1) {
+	if (context->target.x == -1) {
 		fprintf(stderr, "file incorrect: missing symbol '+'\n");
 		return NULL;
 	}
@@ -86,7 +86,7 @@ struct Labyrinth *load_labyrinth(struct Labyrinth *lab, int fd, int file_size) {
 	return lab;
 }
 
-void print_lab(struct Labyrinth *lab) {
+void print_lab(struct Context *context, struct Labyrinth *lab) {
 	int size = lab->size;
 	while (size > 0) {
 		if (size == lab->size) {
@@ -119,14 +119,17 @@ void print_lab(struct Labyrinth *lab) {
 		--size;
 	}
 	putchar('\n');
+	printf("*: {%d %d}\n", context->traveler.x, context->traveler.y);
+	printf("+: {%d %d}\n", context->target.x, context->target.y);
 }
 
 
-void destroy_lab(struct Labyrinth *lab) {
+void destroy_lab(struct Context *context, struct Labyrinth *lab) {
 	for (int k = 0; k < lab->size && lab->labyrinth[k] != NULL; k++) {
 		free(lab->labyrinth[k]);
 	}
 	free(lab->labyrinth);
 	free(lab);
+	free(context);
 }
 

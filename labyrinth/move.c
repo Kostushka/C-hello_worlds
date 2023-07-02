@@ -5,9 +5,9 @@
 #define LEFT    4       //0100 x < -
 #define RIGHT   8       //1000 x > +
 
-int move(struct Labyrinth *lab, int way) {
-	int new_x = lab->traveler.x;
-	int new_y = lab->traveler.y;
+int move(struct Context *context, struct Labyrinth *lab, int way) {
+	int new_x = context->traveler.x;
+	int new_y = context->traveler.y;
 	switch(way) {
 		case UP:
 			// на один указатель назад в массиве указателей 
@@ -45,9 +45,9 @@ int move(struct Labyrinth *lab, int way) {
 	}
 
 	// сдвигаю * на 1 шаг
-	lab->labyrinth[lab->traveler.y][lab->traveler.x] = ' ';
-	lab->traveler.y = new_y;
-	lab->traveler.x = new_x;
+	lab->labyrinth[context->traveler.y][context->traveler.x] = ' ';
+	context->traveler.y = new_y;
+	context->traveler.x = new_x;
 	lab->labyrinth[new_y][new_x] = '*';
 	
 	return 0;

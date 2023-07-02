@@ -3,15 +3,19 @@
 #include <stdint.h>
 #include "labyrinth.h"
 
-#define UP                  1   //00000001 y ^ -
-#define DOWN                2   //00000010 y v +
-#define LEFT                4   //00000100 x < -
-#define RIGHT               8   //00001000 x > +
+enum direction {
+	UP = 1,                  //00000001 y ^ -
+	DOWN = 2,                //00000010 y v +
+	LEFT = 4,                //00000100 x < -
+	RIGHT = 8	             //00001000 x > +
+};
 
-#define EACH_STEP          16   //00010000
-#define ERROR              32   //00100000
-#define CHANGE_DIRECTION   64   //01000000
-#define TARGET            128   //10000000
+enum mode {
+	EACH_STEP = 16,          //00010000
+	ERROR = 32,              //00100000
+	CHANGE_DIRECTION = 64,   //01000000
+	TARGET = 128             //10000000
+};
 
 #define MODE_SIZE(x) (int) (sizeof(x) / sizeof(x[0]))
 
@@ -26,10 +30,15 @@ struct Mode {
 	{"target", TARGET},	
 };
 
-int direction(struct Labyrinth *, int, char **, int);
+int direction(struct Context *, struct Labyrinth *, int, char **, int);
 
 // обработчик команды движения
-int direction(struct Labyrinth *lab, int count_args, char **command_args, int direction) {
+int direction(struct Context *context, struct Labyrinth *lab, int count_args, char **command_args, int direction) {
+	static int prev_direction; // 0
+	context->prev_direction = prev_direction;
+	context->curr_direction = direction;
+	prev_direction = direction;
+	printf("prev: %d\ncurr: %d\nmove res: %d\n", context->prev_direction, context->curr_direction, context->move_result);
 	int num;
 	// проверка, что число аргументов корректно
 	switch(count_args) {
@@ -59,33 +68,34 @@ int direction(struct Labyrinth *lab, int count_args, char **command_args, int di
 	}
 	// перемещение на num шагов
 	while (num > 0) {
-		if (move(lab, direction) != 0) {
+		if (move(context, lab, direction) != 0) {
+			context->move_result = 1;
 			destroy_args(command_args, count_args);
 			return 1;
 		}
+		context->move_result = 0;
 		--num;
 	}
 	return 0;
 }
 
-int direction_left(struct Labyrinth *lab, int count_args, char **command_args) {
-	return direction(lab, count_args, command_args, LEFT);
+int direction_left(struct Context *context, struct Labyrinth *lab, int count_args, char **command_args) {
+	return direction(context, lab, count_args, command_args, LEFT);
 }
 
-int direction_right(struct Labyrinth *lab, int count_args, char **command_args) {
-	return direction(lab, count_args, command_args, RIGHT);
+int direction_right(struct Context *context, struct Labyrinth *lab, int count_args, char **command_args) {
+	return direction(context, lab, count_args, command_args, RIGHT);
 }
 
-int direction_up(struct Labyrinth *lab, int count_args, char **command_args) {
-	return direction(lab, count_args, command_args, UP);
+int direction_up(struct Context *context, struct Labyrinth *lab, int count_args, char **command_args) {
+	return direction(context, lab, count_args, command_args, UP);
 }
 
-int direction_down(struct Labyrinth *lab, int count_args, char **command_args) {
-	return direction(lab, count_args, command_args, DOWN);
+int direction_down(struct Context *context, struct Labyrinth *lab, int count_args, char **command_args) {
+	return direction(context, lab, count_args, command_args, DOWN);
 }
 
-int print_on(struct Labyrinth *lab, int count_args, char **command_args) {
-	unsigned int print_mode = 0;
+int print_on(struct Context *context, struct Labyrinth *lab, int count_args, char **command_args) {
 	int mode_value;
 	
 	// хэш для режимов печати
@@ -96,26 +106,18 @@ int print_on(struct Labyrinth *lab, int count_args, char **command_args) {
 		}
 	}
 	for (int i = 0; i < count_args; i++) {
-		int is_invers = 0;
-		char *arg;
-		char is_mode;
+		char *arg = command_args[i];
+		char is_mode = 1;
 		
 		// если знак инверсии
-		if (command_args[i][0] == '~') {
+		if (arg[0] == '~') {
 			// отключение всех режимов печати
-			if (command_args[i][1] == '\0') {
-				print_mode = 0;
+			if (arg[1] == '\0') {
+				context->print_mode = 0;
 				continue;
 			}
-			is_invers = 1;
-		} 
-		
-		if (is_invers) {
-			arg = &command_args[i][1];
+			++arg;
 			is_mode = 0;
-		} else {
-			arg = command_args[i];
-			is_mode = 1;
 		}
 		
 		// получение режима печати
@@ -128,15 +130,15 @@ int print_on(struct Labyrinth *lab, int count_args, char **command_args) {
 		
 		if (is_mode) {
 			// установка режима печати
-			print_mode |= mode_value;
+			context->print_mode |= mode_value;
 		} else {
 			// отключение режима печати
-			print_mode &= ~mode_value;
+			context->print_mode &= ~mode_value;
 		}
 	}
 	// очистить память выделенную под хэш
 	hash_destroy(hash_mode);
-	printf("print_mode: %o\n", print_mode);
+	printf("print_mode: %o\n", context->print_mode);
 	return 0;
 }
 

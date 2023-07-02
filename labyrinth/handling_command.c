@@ -16,13 +16,11 @@
 #define CHANGE_DIRECTION   64   //01000000
 #define TARGET            128   //10000000
 
-void *handling_command(FILE *fp, struct Labyrinth *lab, struct Hash *command_data) {
+void *handling_command(FILE *fp, struct Context *context, struct Labyrinth *lab, struct Hash *command_data) {
 
 	// отрисовать лабиринт
 	printf("-НАЧАЛО-\n");
-	print_lab(lab);
-	printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-	printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
+	print_lab(context, lab);
 
 	// if (hash_add(hash, "PRINT_ON", direction) == 1) {
 		// return NULL;
@@ -39,7 +37,7 @@ void *handling_command(FILE *fp, struct Labyrinth *lab, struct Hash *command_dat
 	while (1) {
 		// char prev_direction = command->direction;
 		// функция парсинга строки из файла команд и выполнения команды
-		int init = init_command(fp, command_data, lab);
+		int init = init_command(fp, command_data, context, lab);
 		if (init != 0 && init != 1) {
 			if (init == EOF) {
 				break;
@@ -95,7 +93,7 @@ void *handling_command(FILE *fp, struct Labyrinth *lab, struct Hash *command_dat
 	// free(command);
 }
 
-int init_command(FILE *fp, struct Hash *command_data, struct Labyrinth *lab) {
+int init_command(FILE *fp, struct Hash *command_data, struct Context *context, struct Labyrinth *lab) {
 
 	char command_buf[BUFSIZE];
 	// получаю одну команду из файла команд
@@ -141,14 +139,12 @@ int init_command(FILE *fp, struct Hash *command_data, struct Labyrinth *lab) {
 	}
 	
 	// вызываю выполнение обработчика команды
-	if (handler(lab, count_args, command_args) != 0) {
+	if (handler(context, lab, count_args, command_args) != 0) {
 		return -1;
 	}
 
 	// отрисовать лабиринт
-	print_lab(lab);
-	printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-	printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
+	print_lab(context, lab);
 	
 	destroy_args(command_args, count_args);
 	
