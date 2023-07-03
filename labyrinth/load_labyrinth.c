@@ -47,7 +47,7 @@ struct Labyrinth *load_labyrinth(struct Context *context, struct Labyrinth *lab,
 	// формирую двумерный массив
 	for (i = 0; i < lab->size; i++) {
 		// читаю строку из файла
-		line = get_row(fd, lab->size, i, &context->traveler, &context->target);
+		line = get_row(fd, lab->size, i, context);
 
 		// проверка строки на EOF: файл меньше заданной размерности
 		if (line == NULL) {

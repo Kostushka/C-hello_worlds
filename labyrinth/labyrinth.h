@@ -46,16 +46,16 @@ int direction_down(struct Context *, struct Labyrinth *lab, int count_args, char
 int print_on(struct Context *, struct Labyrinth *lab, int	count_args, char **args);
 
 struct Context *context_init(void);
-struct Hash *hash_init(void);
+struct Hash *handler_init(void);
 int init_command(FILE *fp, struct Hash *, struct Context *, struct Labyrinth *);
 void *handling_command(FILE *fp, struct Context *, struct Labyrinth *, struct Hash *);
-char *get_row(int fd, int size, int num_line, struct Point *, struct Point *);
+char *get_row(int fd, int size, int num_line, struct Context *);
 char *get_string(int fd, char *s, int n);
 void print_lab(struct Context *, struct Labyrinth *);
 struct Labyrinth *init_labyrint(int fd, struct Context *, int file_size);
 struct Labyrinth *load_labyrinth(struct Context *, struct Labyrinth *, int fd, int file_size);
 void destroy_lab(struct Context *, struct Labyrinth *);
-struct Point *get_point(struct Point *, struct Point *, int c, int num_line, int num_c);
+struct Point *get_point(struct Context *context, int c, int num_line, int num_c);
 int move(struct Context *, struct Labyrinth *, int way);
 int get_command(FILE *fp, char *, int size);
 int word_count(char *);

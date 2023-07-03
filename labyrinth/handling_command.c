@@ -6,6 +6,9 @@
 #include "labyrinth.h"
 #define BUFSIZE 64
 
+#define IS_COMMENT 1
+#define ERR_GET_COMMAND 2
+
 #define UP                  1   //0001 y ^ -
 #define DOWN                2   //0010 y v +
 #define LEFT                4   //0100 x < -
@@ -38,7 +41,7 @@ void *handling_command(FILE *fp, struct Context *context, struct Labyrinth *lab,
 		// char prev_direction = command->direction;
 		// функция парсинга строки из файла команд и выполнения команды
 		int init = init_command(fp, command_data, context, lab);
-		if (init != 0 && init != 1) {
+		if (init != 0 && init != IS_COMMENT) {
 			if (init == EOF) {
 				break;
 			}
@@ -102,12 +105,12 @@ int init_command(FILE *fp, struct Hash *command_data, struct Context *context, s
 		case 0:
 			break;
 		// комментарий пропускаем
-		case 1:
-			return 1;
+		case IS_COMMENT:
+			return IS_COMMENT;
 		case EOF:
 			return EOF;
 		default:
-			return -1;
+			return ERR_GET_COMMAND;
 	}
 	
 	// считываю в буфер название команды
@@ -135,11 +138,13 @@ int init_command(FILE *fp, struct Hash *command_data, struct Context *context, s
 	command_handler handler = hash_find(command_data, command_name);
 	if (handler == NULL) {
 		fprintf(stderr, "handler for command %s not found in hash\n", command_name);
+		destroy_args(command_args, count_args);
 		return -1;
 	}
 	
 	// вызываю выполнение обработчика команды
 	if (handler(context, lab, count_args, command_args) != 0) {
+		destroy_args(command_args, count_args);
 		return -1;
 	}
 
@@ -218,7 +223,7 @@ int get_command(FILE *fp, char *buf, int size) {
 	if (fgets(buf, size, fp) == NULL) {
 		if (errno) {
 			perror("fgets");
-			return -1;
+			return ERR_GET_COMMAND;
 		}
 		return EOF;		
 	}
@@ -226,7 +231,7 @@ int get_command(FILE *fp, char *buf, int size) {
 	if (feof(fp)) {
 		// проверка на комментарий
 		if (is_empty(buf)) {
-			return 1;
+			return IS_COMMENT;
 		}
 		return 0;
 	}
@@ -235,12 +240,12 @@ int get_command(FILE *fp, char *buf, int size) {
 		if (i == size) {
 			// \n не было найдено в считанной строке
 			fprintf(stderr, "error read command %s\n", buf);
-			return -1;
+			return ERR_GET_COMMAND;
 		}
 		if (buf[i] == '\n') {
 			// проверка на комментарий
 			if (is_empty(buf)) {
-				return 1;
+				return IS_COMMENT;
 			}
 			return 0;
 		}

@@ -32,7 +32,7 @@ char *get_string(int fd, char *s, int n) {
 	return s;
 }
 
-char *get_row(int fd, int size, int num_line, struct Point *traveler, struct Point *target) {
+char *get_row(int fd, int size, int num_line, struct Context *context) {
 	char *s = (char *) calloc(size, sizeof(char));
 	if (s == NULL) {
 		perror("calloc");
@@ -61,7 +61,7 @@ char *get_row(int fd, int size, int num_line, struct Point *traveler, struct Poi
 		}
 
 		// получить координаты '*' и '+' или NULL, если координаты уже были получены
-		if (get_point(traveler, target, buf, num_line, i) == NULL) {
+		if (get_point(context, buf, num_line, i) == NULL) {
 			free(s);
 			return NULL;
 		}
@@ -82,30 +82,30 @@ char *get_row(int fd, int size, int num_line, struct Point *traveler, struct Poi
 	return s;
 }
 
-struct Point *get_point(struct Point *traveler, struct Point *target, int c, int num_line, int num_c) {
+struct Point *get_point(struct Context *context, int c, int num_line, int num_c) {
 	if (c != '*' && c != '+') {
-		return traveler;
+		return &context->traveler;
 	}
 	
 	if (c == '*') {
 		// проверка, что в файле уже записаны координаты '*'
-		if (traveler->x != -1) {
+		if (context->traveler.x != -1) {
 			// num_line + 2 - отсчет с 0 и 1-ая строка содержит служебную информацию
 			fprintf(stderr, "file incorrect: more than one '*' in file, second '*' in %d line\n", num_line + 2);
 			return NULL;
 		}
-		traveler->x = num_c;
-		traveler->y = num_line;
-		return traveler;
+		context->traveler.x = num_c;
+		context->traveler.y = num_line;
+		return &context->traveler;
 	}
 	
 	// проверка, что в файле уже записаны координаты '+'
-	if (target->x != -1) {
+	if (context->target.x != -1) {
 		// num_line + 2 - отсчет с 0 и 1-ая строка содержит служебную информацию
 		fprintf(stderr, "file incorrect: more than one '+' in file, second '+' in %d line\n", num_line + 2);
 		return NULL;
 	}
-	target->x = num_c;
-	target->y = num_line;
-	return target;
+	context->target.x = num_c;
+	context->target.y = num_line;
+	return &context->target;
 }

@@ -14,7 +14,7 @@ struct Command {
 	{"PRINT_ON", print_on},
 };
 
-struct Hash *hash_init(void) {
+struct Hash *handler_init(void) {
 	// создать хэш
 	struct Hash *hash = hash_create(COMMAND_SIZE(command_data));
 	if (hash == NULL) {
