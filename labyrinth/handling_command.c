@@ -8,6 +8,7 @@
 
 #define IS_COMMENT 1
 #define ERR_GET_COMMAND 2
+#define ERR_FATAL -2
 
 #define UP                  1   //0001 y ^ -
 #define DOWN                2   //0010 y v +
@@ -109,8 +110,11 @@ int init_command(FILE *fp, struct Hash *command_data, struct Context *context, s
 			return IS_COMMENT;
 		case EOF:
 			return EOF;
-		default:
+		case ERR_GET_COMMAND:
 			return ERR_GET_COMMAND;
+		default:
+			fprintf(stderr, "fatal error\n");
+			return ERR_FATAL;
 	}
 	
 	// считываю в буфер название команды
@@ -147,9 +151,9 @@ int init_command(FILE *fp, struct Hash *command_data, struct Context *context, s
 		destroy_args(command_args, count_args);
 		return -1;
 	}
-
+	
 	// отрисовать лабиринт
-	print_lab(context, lab);
+	// print_lab(context, lab);
 	
 	destroy_args(command_args, count_args);
 	
@@ -249,7 +253,8 @@ int get_command(FILE *fp, char *buf, int size) {
 			}
 			return 0;
 		}
-	}	
+	}
+	return ERR_FATAL;		
 }
 // # __# ___
 int is_empty(char *str) {

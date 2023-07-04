@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 	}
 	
 	// создать хэш для имен команд и их обработчиков
-	struct Hash *command_data = handler_init();
+	struct Hash *command_data = handlers_init();
 	if (command_data == NULL) {
 		destroy_lab(context, lab);
 		fclose(fp);

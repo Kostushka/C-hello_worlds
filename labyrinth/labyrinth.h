@@ -46,7 +46,7 @@ int direction_down(struct Context *, struct Labyrinth *lab, int count_args, char
 int print_on(struct Context *, struct Labyrinth *lab, int	count_args, char **args);
 
 struct Context *context_init(void);
-struct Hash *handler_init(void);
+struct Hash *handlers_init(void);
 int init_command(FILE *fp, struct Hash *, struct Context *, struct Labyrinth *);
 void *handling_command(FILE *fp, struct Context *, struct Labyrinth *, struct Hash *);
 char *get_row(int fd, int size, int num_line, struct Context *);
@@ -63,3 +63,4 @@ char **write_args(char *, int count_args);
 int print_command(char **);
 void destroy_args(char **, int count_args);
 int is_empty(char *str);
+void print(struct Context *, struct Labyrinth *);

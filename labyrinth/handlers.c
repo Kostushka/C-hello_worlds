@@ -35,10 +35,12 @@ int direction(struct Context *, struct Labyrinth *, int, char **, int);
 // обработчик команды движения
 int direction(struct Context *context, struct Labyrinth *lab, int count_args, char **command_args, int direction) {
 	static int prev_direction; // 0
+	// предыдущее направление сдвига точки
 	context->prev_direction = prev_direction;
+	// текущее направление сдвига точки
 	context->curr_direction = direction;
 	prev_direction = direction;
-	printf("prev: %d\ncurr: %d\nmove res: %d\n", context->prev_direction, context->curr_direction, context->move_result);
+	
 	int num;
 	// проверка, что число аргументов корректно
 	switch(count_args) {
@@ -50,31 +52,34 @@ int direction(struct Context *context, struct Labyrinth *lab, int count_args, ch
 			// проверка, что аргумент число
 			if (sscanf(*command_args, "%d", &num) != 1) {
 				fprintf(stderr, "arg is not a number\n");
-				destroy_args(command_args, count_args);
 				return 1;
 			}
 			// кол-во выполнений команды не может быть меньше 1
 			if (num < 1) {
 				fprintf(stderr, "number of command executed is less than 1\n");
-				destroy_args(command_args, count_args);
 				return 1;
 			}
 			break;
 		default:
 			fprintf(stderr, "incorrect number of args %d\n", count_args);
-			destroy_args(command_args, count_args);
-			return 1;
-			
+			return 1;		
 	}
 	// перемещение на num шагов
 	while (num > 0) {
 		if (move(context, lab, direction) != 0) {
+			// ошибка при сдвиге точки
 			context->move_result = 1;
-			destroy_args(command_args, count_args);
+			// печать лабиринта
+			print(context, lab);
 			return 1;
 		}
+		// сдвиг точки прошел успешно
 		context->move_result = 0;
 		--num;
+		// печать лабиринта
+		print(context, lab);
+		// предыдущее направление сдвига точки не должно учитываться при текущих сдвигах, если их больше одного
+		context->prev_direction = prev_direction;
 	}
 	return 0;
 }
@@ -138,7 +143,37 @@ int print_on(struct Context *context, struct Labyrinth *lab, int count_args, cha
 	}
 	// очистить память выделенную под хэш
 	hash_destroy(hash_mode);
-	printf("print_mode: %o\n", context->print_mode);
 	return 0;
 }
 
+void print(struct Context *context, struct Labyrinth *lab) {
+	// отрисовать лабиринт при изменении направления сдвига точки
+	if (context->print_mode & CHANGE_DIRECTION) {
+		if (context->prev_direction != 0 && context->prev_direction != context->curr_direction) {
+			printf("Изменение направления сдвига точки: %d\n", context->curr_direction);
+			printf("вверх: 1\nвниз: 2\nвлево: 4\nвправо: 8\n");
+			print_lab(context, lab);
+		}
+	}
+	// отрисовать лабиринт, если произошла ошибка при сдвиге точки
+	if (context->print_mode & ERROR) {
+		if (context->move_result == 1) {
+			printf("Произошла ошибка при сдвиге точки, последнее допустимое состояние лабиринта:\n");
+			print_lab(context, lab);
+		}
+	}
+	// отрисовать лабиринт на каждом шаге
+	if (context->print_mode & EACH_STEP) {
+		if (context->move_result == 0) {
+			printf("Сдвиг точки\n");
+			print_lab(context, lab);	
+		}
+	}
+	// отрисовать лабиринт при достижении цели
+	if (context->print_mode & TARGET) {
+		if (context->traveler.x == context->target.x && context->traveler.y == context->target.y) {
+			printf("Координаты точки совпали с координатами цели\n");
+			print_lab(context, lab);
+		}
+	}
+}
