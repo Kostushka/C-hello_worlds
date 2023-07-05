@@ -26,20 +26,7 @@ void *handling_command(FILE *fp, struct Context *context, struct Labyrinth *lab,
 	printf("-НАЧАЛО-\n");
 	print_lab(context, lab);
 
-	// if (hash_add(hash, "PRINT_ON", direction) == 1) {
-		// return NULL;
-	// }
-	
-	// создать структуру для команды
-	// struct Command *command = (struct Command *) malloc(sizeof(struct Command));
-	// command->mode = -1;
-	// command->num = -1;
-	// command->direction = -1;
-
-	// int success = 0;
-
 	while (1) {
-		// char prev_direction = command->direction;
 		// функция парсинга строки из файла команд и выполнения команды
 		int init = init_command(fp, command_data, context, lab);
 		if (init != 0 && init != IS_COMMENT) {
@@ -48,53 +35,7 @@ void *handling_command(FILE *fp, struct Context *context, struct Labyrinth *lab,
 			}
 			return NULL;
 		}
-		// if (prev_direction != -1 && prev_direction != command->direction) {
-			// if (command->mode == CHANGE_DIRECTION) {
-				// print_lab(lab);
-				// printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-				// printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
-			// }
-		// }
-
-		// выполнение команды: перемещение по лабиринту
-		// while (command->num > 0) {
-			// // движение по лабиринту на один шаг
-			// if (move(lab, command->direction) != 0) {
-				// if (command->mode == ERROR) {
-					// print_lab(lab);
-					// printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-					// printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
-				// }
-				// free(command);
-				// return NULL;
-			// }
-			// // отрисовать лабиринт на каждом шаге
-			// if (command->mode == EACH_STEP) {
-				// print_lab(lab);
-				// printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-				// printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
-			// }
-			// 
-			// if (lab->traveler.x == lab->target.x && lab->traveler.y == lab->target.y) {
-				// success = 1;
-				// if (command->mode == TARGET) {
-					// print_lab(lab);
-					// printf("*: {%d; %d}\n", lab->traveler.x, lab->traveler.y);
-					// printf("+: {%d; %d}\n", lab->target.x, lab->target.y);
-				// }
-			// }
-			// --command->num;
-		// }
 	}
-// 
-	// if (!success) {
-		// printf("FAIL!\n");
-	// } else {
-		// printf("SUCCESS!\n");
-	// }
-// 
-	// // очистить память, выделенную под структуру команд
-	// free(command);
 }
 
 int init_command(FILE *fp, struct Hash *command_data, struct Context *context, struct Labyrinth *lab) {
@@ -157,68 +98,6 @@ int init_command(FILE *fp, struct Hash *command_data, struct Context *context, s
 	
 	destroy_args(command_args, count_args);
 	
-	// если считанная строка - команда режима печати
-	// if (strcmp(command_name, "PRINT_ON") == 0) {
-		// if (print_command(command, command_args) != 0) {
-			// destroy_args(command_args, count_args);
-			// return 1;
-		// }
-		// destroy_args(command_args, count_args);
-		// return 0;
-	// }
-// 
-	// // если нет аргументов, кол-во выполнений команды по умолчанию: 1
-	// if (count_args == 0) {
-		// command->num = 1;
-	// } else {
-		// // проверка, что в буфере аргумента число
-		// if (sscanf(command_args[0], "%d", &command->num) != 1) {
-			// fprintf(stderr, "arg is not a number\n");
-			// destroy_args(command_args, count_args);
-			// return 1;
-		// }
-	// }
-// 
-	// // количество выполнений команды не может быть меньше единицы
-	// if (command->num < 1) {
-		// printf("number of commands executed is less than 1\n");
-		// destroy_args(command_args, count_args);
-		// return 1;
-	// }
-// 
-	// // записываю команду в структуру
-	// if (strcmp(command_name, "UP") == 0) {
-		// command->direction = UP;
-	// } else if (strcmp(command_name, "DOWN") == 0) {
-		// command->direction = DOWN;
-	// } else if (strcmp(command_name, "LEFT") == 0) {
-		// command->direction = LEFT;
-	// } else if (strcmp(command_name, "RIGHT") == 0){
-		// command->direction = RIGHT;
-	// } else {
-		// fprintf(stderr, "command data not received\n");
-		// destroy_args(command_args, count_args);
-		// return 1;
-	// }
-	// 
-	// destroy_args(command_args, count_args);
-	// return 0;
-// }
-// 
-// int print_command(struct Command *command, char **command_args) {
-	// // записываю режим печати в структуру
-	// if (strcmp(command_args[0], "each_step") == 0) {
-		// command->mode = EACH_STEP;
-	// } else if (strcmp(command_args[0], "error") == 0) {
-		// command->mode = ERROR;
-	// } else if (strcmp(command_args[0], "change_direction") == 0) {
-		// command->mode = CHANGE_DIRECTION;
-	// } else if (strcmp(command_args[0], "target") == 0) {
-		// command->mode = TARGET;
-	// } else {
-		// fprintf(stderr, "error read print mode\n");
-		// return 1;
-	// }
 	return 0;
 }
 

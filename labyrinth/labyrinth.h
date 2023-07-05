@@ -43,7 +43,7 @@ int direction_left(struct Context *, struct Labyrinth *lab, int count_args, char
 int direction_right(struct Context *, struct Labyrinth *lab, int count_args, char **args);
 int direction_up(struct Context *, struct Labyrinth *lab, int count_args, char **args);
 int direction_down(struct Context *, struct Labyrinth *lab, int count_args, char **args);
-int print_on(struct Context *, struct Labyrinth *lab, int	count_args, char **args);
+int parse_print_on(struct Context *, struct Labyrinth *lab, int	count_args, char **args);
 
 struct Context *context_init(void);
 struct Hash *handlers_init(void);
