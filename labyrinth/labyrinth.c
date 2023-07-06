@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// функция обработки файла команд
-	if (handling_command(fp, context, lab, command_data) == NULL) {
+	if (handling_command(fp, context, lab, command_data) == 1) {
 		destroy_lab(context, lab);
 		fclose(fp);
 		return 1;

@@ -17,6 +17,11 @@ enum mode {
 	TARGET = 128             //10000000
 };
 
+#define SUCCESS_MOVE 0
+#define ERR_MOVE 1
+#define NO_MODE 0
+#define SET_MODE 1
+
 #define MODE_SIZE(x) (int) (sizeof(x) / sizeof(x[0]))
 
 // массив структур с режимами печати
@@ -31,15 +36,14 @@ struct Mode {
 };
 
 int direction(struct Context *, struct Labyrinth *, int, char **, int);
+char *direction_str(int direction);
 
 // обработчик команды движения
 int direction(struct Context *context, struct Labyrinth *lab, int count_args, char **command_args, int direction) {
-	static int prev_direction; // 0
 	// предыдущее направление сдвига точки
-	context->prev_direction = prev_direction;
+	context->prev_direction = context->curr_direction;
 	// текущее направление сдвига точки
 	context->curr_direction = direction;
-	prev_direction = direction;
 	
 	int num;
 	// проверка, что число аргументов корректно
@@ -66,20 +70,20 @@ int direction(struct Context *context, struct Labyrinth *lab, int count_args, ch
 	}
 	// перемещение на num шагов
 	while (num > 0) {
-		if (move(context, lab, direction) != 0) {
+		if (move(context, lab, direction) != SUCCESS_MOVE) {
 			// ошибка при сдвиге точки
-			context->move_result = 1;
+			context->move_result = ERR_MOVE;
 			// печать лабиринта
 			print(context, lab);
 			return 1;
 		}
 		// сдвиг точки прошел успешно
-		context->move_result = 0;
+		context->move_result = SUCCESS_MOVE;
 		--num;
 		// печать лабиринта
 		print(context, lab);
 		// предыдущее направление сдвига точки не должно учитываться при текущих сдвигах, если их больше одного
-		context->prev_direction = prev_direction;
+		context->prev_direction = direction;
 	}
 	return 0;
 }
@@ -112,17 +116,17 @@ int print_on(struct Context *context, struct Labyrinth *lab, int count_args, cha
 	}
 	for (int i = 0; i < count_args; i++) {
 		char *arg = command_args[i];
-		char is_mode = 1;
+		char is_mode = SET_MODE;
 		
 		// если знак инверсии
 		if (arg[0] == '~') {
 			// отключение всех режимов печати
 			if (arg[1] == '\0') {
-				context->print_mode = 0;
+				context->print_mode = NO_MODE;
 				continue;
 			}
 			++arg;
-			is_mode = 0;
+			is_mode = NO_MODE;
 		}
 		
 		// получение режима печати
@@ -150,21 +154,20 @@ void print(struct Context *context, struct Labyrinth *lab) {
 	// отрисовать лабиринт при изменении направления сдвига точки
 	if (context->print_mode & CHANGE_DIRECTION) {
 		if (context->prev_direction != 0 && context->prev_direction != context->curr_direction) {
-			printf("Изменение направления сдвига точки: %d\n", context->curr_direction);
-			printf("вверх: 1\nвниз: 2\nвлево: 4\nвправо: 8\n");
+			printf("Изменение направления сдвига точки: %s\n", direction_str(context->curr_direction));
 			print_lab(context, lab);
 		}
 	}
 	// отрисовать лабиринт, если произошла ошибка при сдвиге точки
 	if (context->print_mode & ERROR) {
-		if (context->move_result == 1) {
+		if (context->move_result == ERR_MOVE) {
 			printf("Произошла ошибка при сдвиге точки, последнее допустимое состояние лабиринта:\n");
 			print_lab(context, lab);
 		}
 	}
 	// отрисовать лабиринт на каждом шаге
 	if (context->print_mode & EACH_STEP) {
-		if (context->move_result == 0) {
+		if (context->move_result == SUCCESS_MOVE) {
 			printf("Сдвиг точки\n");
 			print_lab(context, lab);	
 		}
@@ -175,5 +178,20 @@ void print(struct Context *context, struct Labyrinth *lab) {
 			printf("Координаты точки совпали с координатами цели\n");
 			print_lab(context, lab);
 		}
+	}
+}
+
+char *direction_str(int direction) {
+	switch(direction) {
+		case UP:
+			return "вверх";
+		case DOWN:
+			return "вниз";
+		case LEFT: 
+			return "влево";
+		case RIGHT:
+			return "вправо";
+		default:
+			return "направление не определено";
 	}
 }

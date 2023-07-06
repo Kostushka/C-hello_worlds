@@ -48,7 +48,7 @@ int print_on(struct Context *, struct Labyrinth *lab, int	count_args, char **arg
 struct Context *context_init(void);
 struct Hash *handlers_init(void);
 int init_command(FILE *fp, struct Hash *, struct Context *, struct Labyrinth *);
-void *handling_command(FILE *fp, struct Context *, struct Labyrinth *, struct Hash *);
+int handling_command(FILE *fp, struct Context *, struct Labyrinth *, struct Hash *);
 char *get_row(int fd, int size, int num_line, struct Context *);
 char *get_string(int fd, char *s, int n);
 void print_lab(struct Context *, struct Labyrinth *);
