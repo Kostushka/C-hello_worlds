@@ -39,24 +39,38 @@ struct Print_mode {
 
 char *direction_str(int direction);
 
-struct Parse_data *parse_move(int count_args, char **command_args) {
+struct Parse_data *parse_move(struct Context *context, int count_args, char **command_args, char *direction) {
 	struct Parse_data *parse_data = (struct Parse_data *) malloc(sizeof(struct Parse_data));
 	if (parse_data == NULL) {
 		perror("malloc");
 		return NULL;
 	}
 	// структура под аргументы
-	struct Move_arg *move_arg = (struct Move_arg *) malloc(sizeof(struct Move_arg));
+	move_args_t *move_arg = (move_args_t *) malloc(sizeof(move_args_t));
 	if (move_arg == NULL) {
 		perror("malloc");
 		return NULL;
 	}
+
+	// записать направление
+	if (strcmp(direction, "UP") == 0) {
+		move_arg->direction = UP;
+	} else if (strcmp(direction, "DOWN") == 0) {
+		move_arg->direction = DOWN;
+	} else if (strcmp(direction, "LEFT") == 0) {
+		move_arg->direction = LEFT;
+	} else if (strcmp(direction, "RIGHT") == 0) {
+		move_arg->direction = RIGHT;
+	} else {
+		fprintf(stderr, "%s is not correct direction\n", direction);
+		return NULL;
+	}
+	
 	// проверка, что число аргументов корректно
 	switch(count_args) {
 		case 0:
 			// если нет аргументов, кол-во выполнений команды по умолчанию: 1
 			move_arg->num = 1;
-			parse_data->arg = move_arg;
 			break;
 		case 1:
 			// проверка, что аргумент число
@@ -70,27 +84,28 @@ struct Parse_data *parse_move(int count_args, char **command_args) {
 				fprintf(stderr, "number of command executed is less than 1\n");
 				return NULL;
 			}
-			parse_data->arg = move_arg;
 			break;
 		default:
 			fprintf(stderr, "incorrect number of args %d\n", count_args);
 			return NULL;		
 	}
+	parse_data->arg = move_arg;
 	parse_data->handler = move;
 	return parse_data;
 }
 
 // обработчик команды движения
-int move(struct Context *context, struct Labyrinth *lab, void *arg, int direction) {
+int move(struct Context *context, struct Labyrinth *lab, void *arg) {
+	move_args_t *move_args = (move_args_t *) arg;
+
 	// предыдущее направление сдвига точки
 	context->prev_direction = context->curr_direction;
 	// текущее направление сдвига точки
-	context->curr_direction = direction;
-	
+	context->curr_direction = move_args->direction;
+
 	// перемещение на num шагов
-	int num = (struct Move_arg *) arg->num;
-	while (num > 0) {
-		if (step(context, lab, direction) != SUCCESS_MOVE) {
+	while (move_args->num > 0) {
+		if (step(context, lab, move_args->direction) != SUCCESS_MOVE) {
 			// ошибка при сдвиге точки
 			context->move_result = ERR_MOVE;
 			// печать лабиринта
@@ -99,16 +114,16 @@ int move(struct Context *context, struct Labyrinth *lab, void *arg, int directio
 		}
 		// сдвиг точки прошел успешно
 		context->move_result = SUCCESS_MOVE;
-		--num;
+		--move_args->num;
 		// печать лабиринта
 		print(context, lab);
 		// предыдущее направление сдвига точки не должно учитываться при текущих сдвигах, если их больше одного
-		context->prev_direction = direction;
+		context->prev_direction = move_args->direction;
 	}
 	return 0;
 }
 
-struct Parse_data *parse_print_on(int count_args, char **command_args) {
+struct Parse_data *parse_print_on(struct Context *context, int count_args, char **command_args, char *command_name) {
 	struct Parse_data *parse_data = (struct Parse_data *) malloc(sizeof(struct Parse_data));
 	if (parse_data == NULL) {
 		perror("malloc");
@@ -116,13 +131,12 @@ struct Parse_data *parse_print_on(int count_args, char **command_args) {
 	}
 	
 	// структура под аргументы
-	struct Print_arg *print_arg = (struct Print_arg *) malloc(sizeof(struct Print_arg));
+	print_args_t *print_arg = (print_args_t *) malloc(sizeof(print_args_t));
 	if (print_arg == NULL) {
 		perror("malloc");
 		return NULL;
 	}
 	
-	static unsigned int command_arg;
 	int mode_value;
 	 
 	// хэш для режимов печати
@@ -141,7 +155,7 @@ struct Parse_data *parse_print_on(int count_args, char **command_args) {
 		if (arg[0] == '~') {
 			// отключение всех режимов печати
 			if (arg[1] == '\0') {
-				command_arg = NO_MODE;
+				context->print_mode = NO_MODE;
 				continue;
 			}
 			++arg;
@@ -158,13 +172,13 @@ struct Parse_data *parse_print_on(int count_args, char **command_args) {
 		
 		if (is_mode) {
 			// установка режима печати
-			command_arg |= mode_value;
+			context->print_mode |= mode_value;
 		} else {
 			// отключение режима печати
-			command_arg &= ~mode_value;
+			context->print_mode &= ~mode_value;
 		}
 	}
-	print_arg->mode = command_arg;
+	print_arg->mode = context->print_mode;
 	parse_data->arg = print_arg;
 	parse_data->handler = print_on;
 	
@@ -174,9 +188,8 @@ struct Parse_data *parse_print_on(int count_args, char **command_args) {
 	return parse_data;
 }
 
-int print_on(struct Context *context, struct Labyrinth *lab, void *arg, int command_name) {
-	context->print_mode = arg->mode;
-
+int print_on(struct Context *context, struct Labyrinth *lab, void *arg) {
+	context->print_mode = ((print_args_t *)arg)->mode;
 	return 0;
 }
 

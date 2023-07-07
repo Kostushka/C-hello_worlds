@@ -20,8 +20,8 @@ struct Context {
 	struct Point target;	
 };
 
-typedef int(*command_handler)(struct Context *, struct Labyrinth *, void *arg, int command_name); 
-typedef struct Parse_data *(*parse_handler)(int count_args, char **args);
+typedef int(*command_handler)(struct Context *, struct Labyrinth *, void *arg); 
+typedef struct Parse_data *(*parse_handler)(struct Context *, int count_args, char **args, char *command_name);
 
 struct Parse_data {
 	// обработчик, который исполняет команду
@@ -31,12 +31,17 @@ struct Parse_data {
 };
 
 struct Move_arg {
-	int num;	
+	int num;
+	int direction;	
 };
+
+typedef struct Move_arg move_args_t;
 
 struct Print_arg {
 	unsigned int mode;
 };
+
+typedef struct Print_arg print_args_t;
 
 struct Block {
 	char *key;
@@ -56,16 +61,10 @@ void *hash_find(struct Hash *hash, char *key);
 int hash_add(struct Hash *hash, char *key, void *value);
 void hash_destroy(struct Hash *hash);
 
-int direction_left(struct Context *, struct Labyrinth *lab, int count_args, char **args);
-int direction_right(struct Context *, struct Labyrinth *lab, int count_args, char **args);
-int direction_up(struct Context *, struct Labyrinth *lab, int count_args, char **args);
-int direction_down(struct Context *, struct Labyrinth *lab, int count_args, char **args);
-//int print_on(struct Context *, struct Labyrinth *lab, int	count_args, char **args);
-
-struct Parse_data *parse_print_on(int count_args, char **args);
-struct Parse_data *parse_move(int count_args, char **args);
-int move(struct Context *, struct Labyrinth *lab, void *arg, int command_name);
-int print_on(struct Context *, struct Labyrinth *lab, void *arg, int command_name);
+struct Parse_data *parse_print_on(struct Context *, int count_args, char **args, char *command_name);
+struct Parse_data *parse_move(struct Context *, int count_args, char **args, char *command_name);
+int move(struct Context *, struct Labyrinth *lab, void *arg);
+int print_on(struct Context *, struct Labyrinth *lab, void *arg);
 
 struct Context *context_init(void);
 struct Hash *handlers_init(void);

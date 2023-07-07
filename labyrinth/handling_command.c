@@ -93,22 +93,13 @@ int handle_command(FILE *fp, struct Hash *command_data, struct Context *context,
 	
 	// вызываю выполнение обработчика команды
 	struct Parse_data *handler;
-	if ((handler = parse(count_args, command_args)) == NULL) {
+	if ((handler = parse(context, count_args, command_args, command_name)) == NULL) {
 		destroy_args(command_args, count_args);
 		return -1;
 	}
-	int name;
-	if (strcmp(command_name, "UP") == 0) {
-		name = UP;
-	} else if (strcmp(command_name, "DOWN") == 0) {
-		name = DOWN;
-	} else if (strcmp(command_name, "LEFT") == 0) {
-		name = LEFT;
-	} else if (strcmp(command_name, "RIGHT") == 0) {
-		name = RIGHT;
-	}
+	
 	// вызываю выполнение обработчика, исполняющего команду
-	handler->handler(context, lab, handler->arg, name);
+	handler->handler(context, lab, handler->arg);
 
 	free(handler->arg);
 	free(handler);
