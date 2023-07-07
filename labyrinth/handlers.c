@@ -45,24 +45,32 @@ struct Parse_data *parse_move(int count_args, char **command_args) {
 		perror("malloc");
 		return NULL;
 	}
+	// структура под аргументы
+	struct Move_arg *move_arg = (struct Move_arg *) malloc(sizeof(struct Move_arg));
+	if (move_arg == NULL) {
+		perror("malloc");
+		return NULL;
+	}
 	// проверка, что число аргументов корректно
 	switch(count_args) {
 		case 0:
 			// если нет аргументов, кол-во выполнений команды по умолчанию: 1
-			parse_data->arg = 1;
+			move_arg->num = 1;
+			parse_data->arg = move_arg;
 			break;
 		case 1:
 			// проверка, что аргумент число
-			if (sscanf(*command_args, "%lu", &parse_data->arg) != 1) {
+			if (sscanf(*command_args, "%d", &move_arg->num) != 1) {
 				fprintf(stderr, "arg is not a number\n");
 				return NULL;
 			}
 			
 			// кол-во выполнений команды не может быть меньше 1
-			if (parse_data->arg < 1) {
+			if (move_arg->num < 1) {
 				fprintf(stderr, "number of command executed is less than 1\n");
 				return NULL;
 			}
+			parse_data->arg = move_arg;
 			break;
 		default:
 			fprintf(stderr, "incorrect number of args %d\n", count_args);
@@ -73,14 +81,14 @@ struct Parse_data *parse_move(int count_args, char **command_args) {
 }
 
 // обработчик команды движения
-int move(struct Context *context, struct Labyrinth *lab, uintptr_t arg, int direction) {
+int move(struct Context *context, struct Labyrinth *lab, void *arg, int direction) {
 	// предыдущее направление сдвига точки
 	context->prev_direction = context->curr_direction;
 	// текущее направление сдвига точки
 	context->curr_direction = direction;
 	
 	// перемещение на num шагов
-	int num = (intptr_t) arg;
+	int num = (struct Move_arg *) arg->num;
 	while (num > 0) {
 		if (step(context, lab, direction) != SUCCESS_MOVE) {
 			// ошибка при сдвиге точки
@@ -106,6 +114,14 @@ struct Parse_data *parse_print_on(int count_args, char **command_args) {
 		perror("malloc");
 		return NULL;
 	}
+	
+	// структура под аргументы
+	struct Print_arg *print_arg = (struct Print_arg *) malloc(sizeof(struct Print_arg));
+	if (print_arg == NULL) {
+		perror("malloc");
+		return NULL;
+	}
+	
 	static unsigned int command_arg;
 	int mode_value;
 	 
@@ -148,7 +164,8 @@ struct Parse_data *parse_print_on(int count_args, char **command_args) {
 			command_arg &= ~mode_value;
 		}
 	}
-	parse_data->arg = command_arg;
+	print_arg->mode = command_arg;
+	parse_data->arg = print_arg;
 	parse_data->handler = print_on;
 	
 	// очистить память выделенную под хэш
@@ -157,8 +174,8 @@ struct Parse_data *parse_print_on(int count_args, char **command_args) {
 	return parse_data;
 }
 
-int print_on(struct Context *context, struct Labyrinth *lab, uintptr_t arg, int command_name) {
-	context->print_mode = (uintptr_t) arg;
+int print_on(struct Context *context, struct Labyrinth *lab, void *arg, int command_name) {
+	context->print_mode = arg->mode;
 
 	return 0;
 }

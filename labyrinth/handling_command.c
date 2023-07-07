@@ -109,7 +109,8 @@ int handle_command(FILE *fp, struct Hash *command_data, struct Context *context,
 	}
 	// вызываю выполнение обработчика, исполняющего команду
 	handler->handler(context, lab, handler->arg, name);
-	
+
+	free(handler->arg);
 	free(handler);
 	destroy_args(command_args, count_args);
 	

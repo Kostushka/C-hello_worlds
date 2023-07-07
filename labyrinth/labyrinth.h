@@ -20,8 +20,7 @@ struct Context {
 	struct Point target;	
 };
 
-//typedef int(*command_handler)(struct Context *, struct Labyrinth *, int count_args, char **args); 
-typedef int(*command_handler)(struct Context *, struct Labyrinth *, uintptr_t arg, int command_name); 
+typedef int(*command_handler)(struct Context *, struct Labyrinth *, void *arg, int command_name); 
 typedef struct Parse_data *(*parse_handler)(int count_args, char **args);
 
 struct Parse_data {
@@ -29,6 +28,14 @@ struct Parse_data {
 	command_handler handler;
 	// аргумент обработчика
 	void *arg;
+};
+
+struct Move_arg {
+	int num;	
+};
+
+struct Print_arg {
+	unsigned int mode;
 };
 
 struct Block {
@@ -57,8 +64,8 @@ int direction_down(struct Context *, struct Labyrinth *lab, int count_args, char
 
 struct Parse_data *parse_print_on(int count_args, char **args);
 struct Parse_data *parse_move(int count_args, char **args);
-int move(struct Context *, struct Labyrinth *lab, uintptr_t arg, int command_name);
-int print_on(struct Context *, struct Labyrinth *lab, uintptr_t arg, int command_name);
+int move(struct Context *, struct Labyrinth *lab, void *arg, int command_name);
+int print_on(struct Context *, struct Labyrinth *lab, void *arg, int command_name);
 
 struct Context *context_init(void);
 struct Hash *handlers_init(void);
