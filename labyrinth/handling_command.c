@@ -30,7 +30,7 @@ int handling_commands(FILE *fp, struct Context *context, struct Labyrinth *lab, 
 
 	while (1) {
 		// функция парсинга строки из файла команд и выполнения команды
-		int command = handl_command(fp, command_data, context, lab);
+		int command = handle_command(fp, command_data, context, lab);
 		if (command != SUCCESS_HANDLING_COMMAND && command != IS_COMMENT) {
 			if (command == EOF) {
 				break;
@@ -41,7 +41,7 @@ int handling_commands(FILE *fp, struct Context *context, struct Labyrinth *lab, 
 	return 0;
 }
 
-int handl_command(FILE *fp, struct Hash *command_data, struct Context *context, struct Labyrinth *lab) {
+int handle_command(FILE *fp, struct Hash *command_data, struct Context *context, struct Labyrinth *lab) {
 
 	char command_buf[BUFSIZE];
 	// получаю одну команду из файла команд
@@ -58,7 +58,7 @@ int handl_command(FILE *fp, struct Hash *command_data, struct Context *context, 
 		case ERR_GET_COMMAND:
 			return ERR_GET_COMMAND;
 		default:
-			fprintf(stderr, "fatal error\n");
+			fprintf(stderr, "fatal error: get_command return %d\n", c);
 			return ERR_FATAL;
 	}
 	
@@ -84,8 +84,8 @@ int handl_command(FILE *fp, struct Hash *command_data, struct Context *context, 
 	}
 
 	// получаю обработчик команды по имени
-	parse_handler parse_handler = hash_find(command_data, command_name);
-	if (parse_handler == NULL) {
+	parse_handler parse = hash_find(command_data, command_name);
+	if (parse == NULL) {
 		fprintf(stderr, "handler for command %s not found in hash\n", command_name);
 		destroy_args(command_args, count_args);
 		return -1;
@@ -93,7 +93,7 @@ int handl_command(FILE *fp, struct Hash *command_data, struct Context *context, 
 	
 	// вызываю выполнение обработчика команды
 	struct Parse_data *handler;
-	if ((handler = parse_handler(count_args, command_args)) == NULL) {
+	if ((handler = parse(count_args, command_args)) == NULL) {
 		destroy_args(command_args, count_args);
 		return -1;
 	}

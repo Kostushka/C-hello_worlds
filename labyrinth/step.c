@@ -5,7 +5,7 @@
 #define LEFT    4       //0100 x < -
 #define RIGHT   8       //1000 x > +
 
-int move(struct Context *context, struct Labyrinth *lab, int way) {
+int step(struct Context *context, struct Labyrinth *lab, int way) {
 	int new_x = context->traveler.x;
 	int new_y = context->traveler.y;
 	switch(way) {

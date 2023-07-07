@@ -7,10 +7,10 @@ struct Command {
 	char *command;
 	parse_handler handler;
 } command_data[] = {
-	{"UP", parse_direction},
-	{"DOWN", parse_direction},
-	{"LEFT", parse_direction},
-	{"RIGHT", parse_direction},
+	{"UP", parse_move},
+	{"DOWN", parse_move},
+	{"LEFT", parse_move},
+	{"RIGHT", parse_move},
 	{"PRINT_ON", parse_print_on},
 };
 

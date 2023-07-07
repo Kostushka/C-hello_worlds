@@ -28,7 +28,7 @@ struct Parse_data {
 	// обработчик, который исполняет команду
 	command_handler handler;
 	// аргумент обработчика
-	uintptr_t arg;
+	void *arg;
 };
 
 struct Block {
@@ -56,13 +56,13 @@ int direction_down(struct Context *, struct Labyrinth *lab, int count_args, char
 //int print_on(struct Context *, struct Labyrinth *lab, int	count_args, char **args);
 
 struct Parse_data *parse_print_on(int count_args, char **args);
-struct Parse_data *parse_direction(int count_args, char **args);
-int direction(struct Context *, struct Labyrinth *lab, uintptr_t arg, int command_name);
+struct Parse_data *parse_move(int count_args, char **args);
+int move(struct Context *, struct Labyrinth *lab, uintptr_t arg, int command_name);
 int print_on(struct Context *, struct Labyrinth *lab, uintptr_t arg, int command_name);
 
 struct Context *context_init(void);
 struct Hash *handlers_init(void);
-int handl_command(FILE *fp, struct Hash *, struct Context *, struct Labyrinth *);
+int handle_command(FILE *fp, struct Hash *, struct Context *, struct Labyrinth *);
 int handling_commands(FILE *fp, struct Context *, struct Labyrinth *, struct Hash *);
 char *get_row(int fd, int size, int num_line, struct Context *);
 char *get_string(int fd, char *s, int n);
@@ -71,7 +71,7 @@ struct Labyrinth *init_labyrint(int fd, struct Context *, int file_size);
 struct Labyrinth *load_labyrinth(struct Context *, struct Labyrinth *, int fd, int file_size);
 void destroy_lab(struct Context *, struct Labyrinth *);
 struct Point *get_point(struct Context *context, int c, int num_line, int num_c);
-int move(struct Context *, struct Labyrinth *, int way);
+int step(struct Context *, struct Labyrinth *, int way);
 int get_command(FILE *fp, char *, int size);
 int word_count(char *);
 char **write_args(char *, int count_args);
