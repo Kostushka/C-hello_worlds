@@ -7,6 +7,8 @@
 #include <sys/stat.h>
 #include "labyrinth.h"
 
+#define ERR_HANDLING_COMMAND 1
+
 int main(int argc, char *argv[]) {
 	int fd;
 
@@ -61,7 +63,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// функция обработки файла команд
-	if (handling_command(fp, context, lab, command_data) == 1) {
+	if (handling_commands(fp, context, lab, command_data) == ERR_HANDLING_COMMAND) {
 		destroy_lab(context, lab);
 		fclose(fp);
 		return 1;

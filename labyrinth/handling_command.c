@@ -6,9 +6,11 @@
 #include "labyrinth.h"
 #define BUFSIZE 64
 
+#define SUCCESS_HANDLING_COMMAND 0
 #define IS_COMMENT 1
 #define ERR_GET_COMMAND 2
 #define ERR_FATAL -2
+#define ERR_HANDLING_COMMAND 1
 
 #define UP                  1   //0001 y ^ -
 #define DOWN                2   //0010 y v +
@@ -20,7 +22,7 @@
 #define CHANGE_DIRECTION   64   //01000000
 #define TARGET            128   //10000000
 
-int handling_command(FILE *fp, struct Context *context, struct Labyrinth *lab, struct Hash *command_data) {
+int handling_commands(FILE *fp, struct Context *context, struct Labyrinth *lab, struct Hash *command_data) {
 
 	// отрисовать лабиринт
 	printf("-НАЧАЛО-\n");
@@ -28,23 +30,24 @@ int handling_command(FILE *fp, struct Context *context, struct Labyrinth *lab, s
 
 	while (1) {
 		// функция парсинга строки из файла команд и выполнения команды
-		int init = init_command(fp, command_data, context, lab);
-		if (init != 0 && init != IS_COMMENT) {
-			if (init == EOF) {
+		int command = handl_command(fp, command_data, context, lab);
+		if (command != SUCCESS_HANDLING_COMMAND && command != IS_COMMENT) {
+			if (command == EOF) {
 				break;
 			}
-			return 1;
+			return ERR_HANDLING_COMMAND;
 		}
 	}
 	return 0;
 }
 
-int init_command(FILE *fp, struct Hash *command_data, struct Context *context, struct Labyrinth *lab) {
+int handl_command(FILE *fp, struct Hash *command_data, struct Context *context, struct Labyrinth *lab) {
 
 	char command_buf[BUFSIZE];
 	// получаю одну команду из файла команд
 	int c = get_command(fp, command_buf, BUFSIZE);
 	switch(c) {
+		// комманда успешно получена
 		case 0:
 			break;
 		// комментарий пропускаем
@@ -81,19 +84,33 @@ int init_command(FILE *fp, struct Hash *command_data, struct Context *context, s
 	}
 
 	// получаю обработчик команды по имени
-	command_handler handler = hash_find(command_data, command_name);
-	if (handler == NULL) {
+	parse_handler parse_handler = hash_find(command_data, command_name);
+	if (parse_handler == NULL) {
 		fprintf(stderr, "handler for command %s not found in hash\n", command_name);
 		destroy_args(command_args, count_args);
 		return -1;
 	}
 	
 	// вызываю выполнение обработчика команды
-	if (handler(context, lab, count_args, command_args) != 0) {
+	struct Parse_data *handler;
+	if ((handler = parse_handler(count_args, command_args)) == NULL) {
 		destroy_args(command_args, count_args);
 		return -1;
 	}
+	int name;
+	if (strcmp(command_name, "UP") == 0) {
+		name = UP;
+	} else if (strcmp(command_name, "DOWN") == 0) {
+		name = DOWN;
+	} else if (strcmp(command_name, "LEFT") == 0) {
+		name = LEFT;
+	} else if (strcmp(command_name, "RIGHT") == 0) {
+		name = RIGHT;
+	}
+	// вызываю выполнение обработчика, исполняющего команду
+	handler->handler(context, lab, handler->arg, name);
 	
+	free(handler);
 	destroy_args(command_args, count_args);
 	
 	return 0;

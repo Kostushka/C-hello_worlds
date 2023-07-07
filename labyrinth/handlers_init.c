@@ -5,13 +5,13 @@
 // массив структур с командами и их обработчиками
 struct Command {
 	char *command;
-	command_handler handler;
+	parse_handler handler;
 } command_data[] = {
-	{"UP", direction_up},
-	{"DOWN", direction_down},
-	{"LEFT", direction_left},
-	{"RIGHT", direction_right},
-	{"PRINT_ON", print_on},
+	{"UP", parse_direction},
+	{"DOWN", parse_direction},
+	{"LEFT", parse_direction},
+	{"RIGHT", parse_direction},
+	{"PRINT_ON", parse_print_on},
 };
 
 struct Hash *handlers_init(void) {
