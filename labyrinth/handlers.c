@@ -24,7 +24,7 @@ enum mode {
 #define SET_MODE 1
 #define DEFAULT_PREV_DIRECTION -1
 
-#define MODE_SIZE(x) (int) (sizeof(x) / sizeof(x[0]))
+#define SIZE(x) (int) (sizeof(x) / sizeof(x[0]))
 
 // массив структур с режимами печати
 struct Print_mode {
@@ -37,9 +37,19 @@ struct Print_mode {
 	{"target", TARGET},	
 };
 
+struct Parse_direction {
+	char *str;
+	int num;
+} parse_direction[] = {
+	{"UP", UP},
+	{"DOWN", DOWN},
+	{"LEFT", LEFT},
+	{"RIGHT", RIGHT},
+};
+
 char *direction_str(int direction);
 
-struct Parse_data *parse_move(struct Context *context, int count_args, char **command_args, char *direction) {
+struct Parse_data *parse_move(struct Context *context, int count_args, char *direction, char **command_args) {
 	struct Parse_data *parse_data = (struct Parse_data *) malloc(sizeof(struct Parse_data));
 	if (parse_data == NULL) {
 		perror("malloc");
@@ -51,17 +61,17 @@ struct Parse_data *parse_move(struct Context *context, int count_args, char **co
 		perror("malloc");
 		return NULL;
 	}
-
+	// значение направления по умолчанию
+	move_arg->direction = 0;
+	
 	// записать направление
-	if (strcmp(direction, "UP") == 0) {
-		move_arg->direction = UP;
-	} else if (strcmp(direction, "DOWN") == 0) {
-		move_arg->direction = DOWN;
-	} else if (strcmp(direction, "LEFT") == 0) {
-		move_arg->direction = LEFT;
-	} else if (strcmp(direction, "RIGHT") == 0) {
-		move_arg->direction = RIGHT;
-	} else {
+	for (int i = 0; i < SIZE(parse_direction); i++) {
+		if (strcmp(direction, parse_direction[i].str) == 0) {
+			move_arg->direction = parse_direction[i].num;
+		}
+	}
+	
+	if (move_arg->direction == 0) {
 		fprintf(stderr, "%s is not correct direction\n", direction);
 		return NULL;
 	}
@@ -123,7 +133,7 @@ int move(struct Context *context, struct Labyrinth *lab, void *arg) {
 	return 0;
 }
 
-struct Parse_data *parse_print_on(struct Context *context, int count_args, char **command_args, char *command_name) {
+struct Parse_data *parse_print_on(struct Context *context, int count_args, char *command_name, char **command_args) {
 	struct Parse_data *parse_data = (struct Parse_data *) malloc(sizeof(struct Parse_data));
 	if (parse_data == NULL) {
 		perror("malloc");
@@ -131,17 +141,17 @@ struct Parse_data *parse_print_on(struct Context *context, int count_args, char 
 	}
 	
 	// структура под аргументы
-	print_args_t *print_arg = (print_args_t *) malloc(sizeof(print_args_t));
-	if (print_arg == NULL) {
-		perror("malloc");
-		return NULL;
-	}
+	// print_args_t *print_arg = (print_args_t *) malloc(sizeof(print_args_t));
+	// if (print_arg == NULL) {
+		// perror("malloc");
+		// return NULL;
+	// }
 	
 	int mode_value;
 	 
 	// хэш для режимов печати
-	struct Hash *hash_mode = hash_create(MODE_SIZE(mode));
-	for (int i = 0; i < MODE_SIZE(mode); i++) {
+	struct Hash *hash_mode = hash_create(SIZE(mode));
+	for (int i = 0; i < SIZE(mode); i++) {
 		if (hash_add(hash_mode, mode[i].mode, (void *) mode[i].value) != 0) {
 			return NULL;
 		}
@@ -178,8 +188,9 @@ struct Parse_data *parse_print_on(struct Context *context, int count_args, char 
 			context->print_mode &= ~mode_value;
 		}
 	}
-	print_arg->mode = context->print_mode;
-	parse_data->arg = print_arg;
+	// print_arg->mode = context->print_mode;
+	// parse_data->arg = print_arg;
+	parse_data->arg = NULL;
 	parse_data->handler = print_on;
 	
 	// очистить память выделенную под хэш
@@ -189,7 +200,10 @@ struct Parse_data *parse_print_on(struct Context *context, int count_args, char 
 }
 
 int print_on(struct Context *context, struct Labyrinth *lab, void *arg) {
-	context->print_mode = ((print_args_t *)arg)->mode;
+	// context->print_mode = ((print_args_t *)arg)->mode;
+	if (arg != NULL) {
+		return 1;
+	}
 	return 0;
 }
 

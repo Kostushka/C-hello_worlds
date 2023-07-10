@@ -93,13 +93,18 @@ int handle_command(FILE *fp, struct Hash *command_data, struct Context *context,
 	
 	// вызываю выполнение обработчика команды
 	struct Parse_data *handler;
-	if ((handler = parse(context, count_args, command_args, command_name)) == NULL) {
+	if ((handler = parse(context, count_args, command_name, command_args)) == NULL) {
 		destroy_args(command_args, count_args);
 		return -1;
 	}
 	
 	// вызываю выполнение обработчика, исполняющего команду
-	handler->handler(context, lab, handler->arg);
+	if (handler->handler(context, lab, handler->arg) != 0) {
+		free(handler->arg);
+		free(handler);
+		destroy_args(command_args, count_args);
+		return -1;
+	}
 
 	free(handler->arg);
 	free(handler);

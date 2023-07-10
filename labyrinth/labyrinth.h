@@ -21,7 +21,7 @@ struct Context {
 };
 
 typedef int(*command_handler)(struct Context *, struct Labyrinth *, void *arg); 
-typedef struct Parse_data *(*parse_handler)(struct Context *, int count_args, char **args, char *command_name);
+typedef struct Parse_data *(*parse_handler)(struct Context *, int count_args, char *command_name, char **args);
 
 struct Parse_data {
 	// обработчик, который исполняет команду
@@ -61,8 +61,8 @@ void *hash_find(struct Hash *hash, char *key);
 int hash_add(struct Hash *hash, char *key, void *value);
 void hash_destroy(struct Hash *hash);
 
-struct Parse_data *parse_print_on(struct Context *, int count_args, char **args, char *command_name);
-struct Parse_data *parse_move(struct Context *, int count_args, char **args, char *command_name);
+struct Parse_data *parse_print_on(struct Context *, int count_args, char *command_name, char **args);
+struct Parse_data *parse_move(struct Context *, int count_args, char *command_name, char **args);
 int move(struct Context *, struct Labyrinth *lab, void *arg);
 int print_on(struct Context *, struct Labyrinth *lab, void *arg);
 
@@ -81,7 +81,6 @@ int step(struct Context *, struct Labyrinth *, int way);
 int get_command(FILE *fp, char *, int size);
 int word_count(char *);
 char **write_args(char *, int count_args);
-int print_command(char **);
 void destroy_args(char **, int count_args);
 int is_empty(char *str);
 void print(struct Context *, struct Labyrinth *);
