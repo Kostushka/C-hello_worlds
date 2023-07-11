@@ -19,6 +19,7 @@ enum mode {
 };
 
 #define SUCCESS_MOVE 0
+#define ERR_OBSTACLE 1
 #define ERR_MOVE 1
 #define NO_MODE 0
 #define SET_MODE 1
@@ -121,45 +122,64 @@ int move(struct Context *context, struct Labyrinth *lab, void *arg) {
 	// текущее направление сдвига точки
 	context->curr_direction = move_args->direction;
 
-	// если команда движения до упора в препятствие
+	// команда движения до упора в препятствие
 	if (move_args->is_to_obstacle) {
-		move_args->num = 0;
+		move_to_obstacle(context, lab, move_args);
 		
-		// перемещение до упора в препятствие
-		while (1) {
-			if (step(context, lab, move_args->direction) != SUCCESS_MOVE) {
-				break;
-			}
-		
-			// печать лабиринта
-			print(context, lab);
-			
-			// предыдущее направление сдвига точки не должно учитываться при текущих сдвигах, если их больше одного
-			context->prev_direction = move_args->direction;
-		}
+		return SUCCESS_MOVE;
 	}
 
-	// перемещение на num шагов
+	// команда перемещения на num шагов
+	if (move_on_num_step(context, lab, move_args) != SUCCESS_MOVE) {
+		return ERR_MOVE;
+	}
+	return SUCCESS_MOVE;
+}
+
+void move_to_obstacle(struct Context *context, struct Labyrinth *lab, move_args_t *move_args) {
+	// перемещение до упора в препятствие
+	while (1) {
+		// проверка, что достигли препятствие
+		if (step_with_print(context, lab, move_args) == ERR_OBSTACLE) {
+			break;
+		}
+	}
+}
+
+int move_on_num_step(struct Context *context, struct Labyrinth *lab, move_args_t *move_args) {
 	while (move_args->num > 0) {
-		if (step(context, lab, move_args->direction) != SUCCESS_MOVE) {
+		if (step_with_print(context, lab, move_args) == ERR_OBSTACLE) {
 			// ошибка при сдвиге точки
 			context->move_result = ERR_MOVE;
 			// печать лабиринта
-			print(context, lab);
-			return 1;
+			print_by_mode(context, lab);
+			
+			return ERR_MOVE;
 		}
-		// сдвиг точки прошел успешно
-		context->move_result = SUCCESS_MOVE;
-		
 		--move_args->num;
-		
-		// печать лабиринта
-		print(context, lab);
-		
-		// предыдущее направление сдвига точки не должно учитываться при текущих сдвигах, если их больше одного
-		context->prev_direction = move_args->direction;
 	}
-	return 0;
+	return SUCCESS_MOVE;
+}
+
+int step_with_print(struct Context *context, struct Labyrinth *lab, move_args_t *move_args) {
+	// сдвиг точки
+	int step_status = step(context, lab, move_args->direction);
+
+	// сдвиг точки не удался из-за препятствия
+	if (step_status == ERR_OBSTACLE) {
+		return ERR_OBSTACLE;
+	}
+	
+	// сдвиг точки прошел успешно
+	context->move_result = SUCCESS_MOVE;
+		
+	// печать лабиринта
+	print_by_mode(context, lab);
+	
+	// предыдущее направление сдвига точки не должно учитываться при текущих сдвигах, если их больше одного
+	context->prev_direction = move_args->direction;
+	
+	return SUCCESS_MOVE;
 }
 
 struct Parse_data *parse_print_on(struct Context *context, int count_args, char *command_name, char **command_args) {
@@ -237,7 +257,7 @@ int print_on(struct Context *context, struct Labyrinth *lab, void *arg) {
 	return 0;
 }
 
-void print(struct Context *context, struct Labyrinth *lab) {
+void print_by_mode(struct Context *context, struct Labyrinth *lab) {
 	// отрисовать лабиринт при изменении направления сдвига точки
 	if (context->print_mode & CHANGE_DIRECTION) {
 		if (context->prev_direction != DEFAULT_PREV_DIRECTION && context->prev_direction != context->curr_direction) {

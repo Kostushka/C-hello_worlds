@@ -84,4 +84,7 @@ int word_count(char *);
 char **write_args(char *, int count_args);
 void destroy_args(char **, int count_args);
 int is_empty(char *str);
-void print(struct Context *, struct Labyrinth *);
+void print_by_mode(struct Context *, struct Labyrinth *);
+void move_to_obstacle(struct Context *, struct Labyrinth *, move_args_t *);
+int move_on_num_step(struct Context *, struct Labyrinth *, move_args_t *);
+int step_with_print(struct Context *, struct Labyrinth *, move_args_t *);
