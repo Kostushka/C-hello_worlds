@@ -83,9 +83,6 @@ struct Labyrinth *load_labyrinth(struct Context *context, struct Labyrinth *lab,
 		return NULL;
 	}
 
-	// запись в контекст координат на шаг вперед от координат точки
-	write_step_forward(context);
-
 	return lab;
 }
 
