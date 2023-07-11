@@ -14,8 +14,30 @@ struct Context *context_init(void) {
 	context->curr_direction = -1;
 	context->traveler.x = -1;
 	context->traveler.y = -1;
+	context->traveler_step_up.x = -1;
+	context->traveler_step_up.y = -1;
+	context->traveler_step_down.x = -1;
+	context->traveler_step_down.y = -1;
+	context->traveler_step_left.x = -1;
+	context->traveler_step_left.y = -1;
+	context->traveler_step_right.x = -1;
+	context->traveler_step_right.y = -1;
 	context->target.x = -1;
 	context->target.y = -1;
 	
 	return context;
+}
+
+void write_step_forward(struct Context *context) {
+	context->traveler_step_up.x = context->traveler.x;
+	context->traveler_step_up.y = context->traveler.y + 1;
+
+	context->traveler_step_down.x = context->traveler.x;
+	context->traveler_step_down.y = context->traveler.y - 1;
+
+	context->traveler_step_left.x = context->traveler.x - 1;
+	context->traveler_step_left.y = context->traveler.y;
+
+	context->traveler_step_right.x = context->traveler.x + 1;
+	context->traveler_step_right.y = context->traveler.y;
 }

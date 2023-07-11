@@ -76,6 +76,8 @@ struct Parse_data *parse_move(struct Context *context, int count_args, char *dir
 		return NULL;
 	}
 	
+	move_arg->is_to_obstacle = 0;
+	
 	// проверка, что число аргументов корректно
 	switch(count_args) {
 		case 0:
@@ -83,6 +85,12 @@ struct Parse_data *parse_move(struct Context *context, int count_args, char *dir
 			move_arg->num = 1;
 			break;
 		case 1:
+			// проверка, что аргумент - флаг, означающий движение до упора в препятствие
+			if (strcmp(*command_args, "to_obstacle") == 0) {
+				move_arg->is_to_obstacle = 1;
+				break;
+			}
+			
 			// проверка, что аргумент число
 			if (sscanf(*command_args, "%d", &move_arg->num) != 1) {
 				fprintf(stderr, "arg is not a number\n");
@@ -113,6 +121,46 @@ int move(struct Context *context, struct Labyrinth *lab, void *arg) {
 	// текущее направление сдвига точки
 	context->curr_direction = move_args->direction;
 
+	// если команда движения до упора в препятствие, вычислить количество шагов до первого препятствия
+	if (move_args->is_to_obstacle) {
+		move_args->num = 0;
+		// координаты следующего шага
+		struct Point traveler_step_direction;
+		
+		// знак операции для изменения координаты: х и y
+		int operation_sign_to_x;
+		int operation_sign_to_y;
+
+		// вычислить координаты следующего шага для текущего направления
+		traveler_step_direction = get_step_forward(context, move_args->direction, &operation_sign_to_x, &operation_sign_to_y);
+
+		// пока нет препятствий инкрементировать счетчик шагов
+		while (1) {
+			// координаты следующего шага не должны выходить за границы лабиринта 
+			if (traveler_step_direction.x < 0 || traveler_step_direction.x >= lab->size) {
+				break;
+			}	
+			if (traveler_step_direction.y < 0 || traveler_step_direction.y >= lab->size) {
+				break;
+			}
+			
+			// получить символ следующего шага
+			int c = lab->labyrinth[traveler_step_direction.y][traveler_step_direction.x];
+			
+			// проверка, что символ является символом препятствия
+			if (c != ' ' && c != '+') {
+				break;
+			}
+			
+			// изменение координаты: х и y
+			traveler_step_direction.x += operation_sign_to_x;
+			traveler_step_direction.y += operation_sign_to_y;
+			
+			// инкрементировать счетчик шагов
+			move_args->num++;
+		}
+	}
+
 	// перемещение на num шагов
 	while (move_args->num > 0) {
 		if (step(context, lab, move_args->direction) != SUCCESS_MOVE) {
@@ -124,13 +172,52 @@ int move(struct Context *context, struct Labyrinth *lab, void *arg) {
 		}
 		// сдвиг точки прошел успешно
 		context->move_result = SUCCESS_MOVE;
+
+		// запись в контекст координат на шаг вперед от координат точки
+		write_step_forward(context);
+		
 		--move_args->num;
+		
 		// печать лабиринта
 		print(context, lab);
+		
 		// предыдущее направление сдвига точки не должно учитываться при текущих сдвигах, если их больше одного
 		context->prev_direction = move_args->direction;
 	}
 	return 0;
+}
+
+struct Point get_step_forward(struct Context *context, int direction, int *sign_x, int *sign_y) {
+	struct Point traveler_step_direction;
+	*sign_x = 0;
+	*sign_y = 0;
+	switch(direction) {
+		case UP:
+			// координаты след. шага по направлению вверх
+			traveler_step_direction = context->traveler_step_up;
+			// записываю знак для изменения координаты
+			*sign_y = -1;
+			break;
+		case DOWN:
+			// координаты след. шага по направлению вниз
+			traveler_step_direction = context->traveler_step_down;
+			// записываю знак для изменения координаты
+			*sign_y = 1;
+			break;
+		case LEFT:
+			// координаты след. шага по направлению влево
+			traveler_step_direction = context->traveler_step_left;
+			// записываю знак для изменения координаты
+			*sign_x = -1;
+			break;
+		case RIGHT:
+			// координаты след. шага по направлению вправо
+			traveler_step_direction = context->traveler_step_right;
+			// записываю знак для изменения координаты
+			*sign_x = 1;
+			break;
+	}
+	return traveler_step_direction;
 }
 
 struct Parse_data *parse_print_on(struct Context *context, int count_args, char *command_name, char **command_args) {
@@ -201,6 +288,7 @@ struct Parse_data *parse_print_on(struct Context *context, int count_args, char 
 
 int print_on(struct Context *context, struct Labyrinth *lab, void *arg) {
 	// context->print_mode = ((print_args_t *)arg)->mode;
+	// для функции печати команды нет обработчика исполнения
 	if (arg != NULL) {
 		return 1;
 	}
@@ -234,6 +322,8 @@ void print(struct Context *context, struct Labyrinth *lab) {
 		if (context->traveler.x == context->target.x && context->traveler.y == context->target.y) {
 			printf("Координаты точки совпали с координатами цели\n");
 			print_lab(context, lab);
+			context->target.x = -1;
+			context->target.y = -1;
 		}
 	}
 }
@@ -252,3 +342,5 @@ char *direction_str(int direction) {
 			return "направление не определено";
 	}
 }
+
+
